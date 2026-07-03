@@ -14599,6 +14599,12 @@ var suggestionsTable = pgTable("suggestions", {
   thumbsDown: integer("thumbs_down").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
+var newsletterTable = pgTable("newsletter_subscribers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  source: text("source"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
 function getDb(env) {
   const client = Xs(env.NEON_DATABASE_URL);
   return drizzle(client);
@@ -14667,6 +14673,32 @@ app.post("/contact", async (c) => {
   );
 });
 
+app.post("/newsletter", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const email = String(body?.email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    return c.json({ error: "Please provide a valid email address" }, 400);
+  }
+  const db = getDb(c.env);
+  await db.insert(newsletterTable).values({
+    email,
+    source: body?.source ? String(body.source).slice(0, 80) : null
+  }).onConflictDoNothing();
+  return c.json({ ok: true, message: "You're on the list!" }, 201);
+});
+app.get("/newsletter", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const db = getDb(c.env);
+  const subs = await db.select().from(newsletterTable).orderBy(sql`${newsletterTable.createdAt} DESC`);
+  return c.json(subs.map((s) => ({
+    id: s.id,
+    email: s.email,
+    source: s.source,
+    createdAt: s.createdAt.toISOString()
+  })));
+});
 app.get("/contacts", async (c) => {
   const auth = c.req.header("Authorization");
   if (!auth || !auth.startsWith("Bearer ")) {

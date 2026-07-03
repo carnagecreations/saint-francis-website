@@ -35,6 +35,7 @@
     getAuction:      (q = "") => apiGet("/fundraiser/items" + q),
     getResidents:    () => apiGet("/animals?status=resident"),
     sendContact:     (payload) => apiSend("POST", "/contact", payload),
+    subscribe:       (email, source) => apiSend("POST", "/newsletter", { email, source }),
     // NOTE: no admin client here by design. All admin operations (animals,
     // auction items, contact inbox) are performed through the SanctuaryBase
     // app, which proxies to this site's /api/admin/* routes server-side.
@@ -753,7 +754,7 @@
         btn.disabled = true;
         btn.textContent = "Signing up...";
         var page = document.body.getAttribute("data-page") || location.pathname;
-        SF.sendContact({ name: "Newsletter signup", email: val, subject: "newsletter", message: "Please add " + val + " to the email update list. (Signed up from: " + page + ")" })
+        SF.subscribe(val, page)
           .then(function () {
             form.innerHTML = '<span style="color:var(--clay);font-weight:600;font-size:.95rem">✓ Thanks! You\'re on the list.</span>';
             SF.announce("Thanks - you are subscribed. We will be in touch.");
