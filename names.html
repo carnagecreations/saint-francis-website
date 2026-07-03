@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suggest a Name | Saint Francis Rescue & Sanctuary</title>
+<meta name="description" content="Suggest and vote on names for the next animal rescued at Saint Francis Rescue & Sanctuary.">
+<link rel="canonical" href="https://saintfrancisrescue.org/names">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Suggest a Name | Saint Francis Rescue & Sanctuary">
+<meta property="og:description" content="Help us name our next rescue! Suggest names and vote on your favorites.">
+<meta property="og:image" content="https://saintfrancisrescue.org/opengraph.jpg">
+<meta property="og:url" content="https://saintfrancisrescue.org/names">
+<meta name="theme-color" content="#1f3a2e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="images/logo-mark-sm.png" sizes="any">
+<link rel="apple-touch-icon" href="images/logo-mark-sm.png">
+<link rel="stylesheet" href="styles.css?v=36">
+<style>
+  .names-container { max-width: 900px; margin: 0 auto; }
+  .names-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+  .name-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 2px solid var(--line);
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+  }
+  .name-card:hover {
+    border-color: var(--gold);
+    box-shadow: 0 8px 24px rgba(212, 165, 84, 0.15);
+    transform: translateY(-4px);
+  }
+  .name-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .name-card h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--ink);
+    flex: 1;
+  }
+  .name-emoji {
+    font-size: 2rem;
+    margin-right: 0.5rem;
+  }
+  .name-card-by {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  .name-card-votes {
+    display: flex;
+    gap: 1rem;
+    margin-top: auto;
+  }
+  .vote-btn {
+    flex: 1;
+    padding: 0.8rem;
+    border: 2px solid var(--line);
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .vote-btn:hover {
+    border-color: var(--gold);
+    background: rgba(212, 165, 84, 0.05);
+  }
+  .vote-btn.voted-up {
+    border-color: var(--gold);
+    background: rgba(212, 165, 84, 0.2);
+  }
+  .vote-btn.voted-down {
+    border-color: #c7754a;
+    background: rgba(199, 117, 74, 0.1);
+  }
+  .vote-count {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .names-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted);
+  }
+  .names-header-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .names-sort {
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+  .names-sort:hover {
+    border-color: var(--gold);
+  }
+  .names-stats {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .stat-box {
+    background: var(--cream);
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 0.3rem;
+  }
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  @media (max-width: 720px) {
+    .names-grid {
+      grid-template-columns: 1fr;
+    }
+    .name-card {
+      padding: 1.2rem;
+    }
+    .names-header-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+    .names-sort {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body data-page="names">
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html" aria-label="Saint Francis Rescue and Sanctuary home">
+      <img loading="lazy" src="images/logo.webp" alt="Saint Francis Rescue logo" width="42" height="42" style="object-fit:contain">
+      <span class="brand-text"><strong>Saint Francis</strong><span>Rescue &amp; Sanctuary</span></span>
+    </a>
+    <nav class="nav-links" id="primary-nav" aria-label="Primary">
+      <a href="index.html" data-nav="home">Home</a>
+      <a href="animals.html" data-nav="animals">Our Animals</a>
+      <div class="nav-dropdown-wrapper">
+        <a href="#" data-nav="help" class="nav-dropdown-toggle">Want to Help? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-left:4px"><path d="M6 9l6 6 6-6"/></svg></a>
+        <div class="nav-dropdown-menu nav-mega-menu">
+          <a href="donate.html" class="mega-menu-item">
+            <span class="mega-menu-icon">💝</span>
+            <span class="mega-menu-title">Donate</span>
+            <span class="mega-menu-desc">Give now to help our animals</span>
+          </a>
+          <a href="foster-apply.html" class="mega-menu-item">
+            <span class="mega-menu-icon">🏡</span>
+            <span class="mega-menu-title">Foster</span>
+            <span class="mega-menu-desc">Provide temporary care</span>
+          </a>
+          <a href="adopt-apply.html" class="mega-menu-item">
+            <span class="mega-menu-icon">❤️</span>
+            <span class="mega-menu-title">Adopt</span>
+            <span class="mega-menu-desc">Find your new companion</span>
+          </a>
+          <a href="volunteer.html" class="mega-menu-item">
+            <span class="mega-menu-icon">🤝</span>
+            <span class="mega-menu-title">Volunteer</span>
+            <span class="mega-menu-desc">Get hands-on involved</span>
+          </a>
+        </div>
+      </div>
+      <a href="fundraiser.html" data-nav="fundraiser">Auction &amp; Fundraiser</a>
+      <div class="nav-dropdown-wrapper">
+        <a href="about.html" data-nav="about" class="nav-dropdown-toggle">Our Story <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-left:4px"><path d="M6 9l6 6 6-6"/></svg></a>
+        <div class="nav-dropdown-menu">
+          <a href="ways-to-help.html">Ways to Help</a>
+          <a href="corporate.html">Corporate Giving</a>
+          <a href="press.html">Press &amp; Media</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="contact.html" data-nav="contact">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-gold btn-sm" href="donate.html">Donate</a>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<a id="top"></a>
+<main id="main-content" tabindex="-1">
+
+<section class="pagehead">
+  <div class="pagehead-bg" style="background: linear-gradient(135deg, var(--pine) 0%, #0e1c15 100%);"></div>
+  <div class="wrap pagehead-inner">
+    <div class="crumb"><a href="index.html">Home</a> / Name Suggestions</div>
+    <span class="eyebrow">Community voting</span>
+    <h1 style="margin-top:.6rem;color:#fff">Help us name our next rescue! 🐾</h1>
+    <p class="lead" style="color:rgba(251,248,241,.85)">Suggest a name and vote on your favorites. Every community suggestion shapes the animals that come through our sanctuary.</p>
+  </div>
+</section>
+
+<section class="section tone-cream">
+  <div class="wrap names-container">
+    <div class="names-stats">
+      <div class="stat-box">
+        <div class="stat-number" id="total-names">0</div>
+        <div class="stat-label">Names Suggested</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="total-votes">0</div>
+        <div class="stat-label">Total Votes Cast</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="top-voted">—</div>
+        <div class="stat-label">Most Popular</div>
+      </div>
+    </div>
+
+    <div class="names-header-actions">
+      <button class="names-sort" onclick="sortNames('popular')">👍 Most Popular</button>
+      <button class="names-sort" onclick="sortNames('recent')">⏱️ Most Recent</button>
+      <button class="names-sort" onclick="sortNames('controversial')">⚡ Most Voted</button>
+    </div>
+
+    <div id="names-list" class="names-grid">
+      <div class="names-empty">
+        <p>No names suggested yet. Be the first! Go back and suggest one.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<section class="pre-footer-strip">
+  <div class="wrap">
+    <div class="pfs-inner">
+      <div class="pfs-text">
+        <strong>Be part of the rescue story.</strong>
+        <span>Get updates when we rescue a new animal—you might see your suggested name come to life!</span>
+      </div>
+      <div>
+        <div class="pfs-form" id="pfs-form">
+          <input type="email" placeholder="your@email.com" aria-label="Email address" id="pfs-email" autocomplete="email">
+          <button class="btn btn-clay btn-sm" type="button" id="pfs-submit">Keep me posted</button>
+        </div>
+        <p class="pfs-note">No spam. Unsubscribe anytime. We won't share your info.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <h4>Explore</h4>
+        <nav class="foot-links">
+          <a href="index.html">Home</a>
+          <a href="animals.html">Our Animals</a>
+          <a href="ways-to-help.html">Ways to Help</a>
+          <a href="fundraiser.html">Auction &amp; Fundraiser</a>
+          <a href="about.html">Our Story</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+      <div>
+        <h4>Get Involved</h4>
+        <nav class="foot-links">
+          <a href="donate.html">Donate</a>
+          <a href="foster-apply.html">Foster</a>
+          <a href="adopt-apply.html">Adopt</a>
+          <a href="volunteer-signup.html">Volunteer</a>
+        </nav>
+      </div>
+      <div>
+        <h4>Connect</h4>
+        <div class="socials">
+          <a href="https://www.facebook.com/profile.php?id=61585411116127" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5.5H14c-2 0-3.5 1.5-3.5 3.6V11H8v3h2.5v6.5h3V14H16l.5-3h-3V9.4c0-.6.4-.9 1-.9Z"/></svg></a>
+          <a href="https://www.instagram.com/saintfrancisrescueandsanctuary" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.6" cy="7.4" r="1" fill="currentColor" stroke="none"/></svg></a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span class="badge501">Registered 501(c)(3) Non-Profit &middot; Donations are tax-deductible</span>
+      <span class="foot-credit">Designed by Venom Vision Designs</span>
+    </div>
+  </div>
+</footer>
+
+<a class="back-top" href="#top" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:22px;height:22px" aria-hidden="true"><ellipse cx="7.2" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="12" cy="7.6" rx="1.8" ry="2.5"/><ellipse cx="16.8" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="4.6" cy="14" rx="1.5" ry="2"/><ellipse cx="19.4" cy="14" rx="1.5" ry="2"/><path d="M12 12.4c-2.6 0-4.8 1.9-5.3 4.1-.3 1.4.8 2.6 2.2 2.6.9 0 1.7-.4 3.1-.4s2.2.4 3.1.4c1.4 0 2.5-1.2 2.2-2.6-.5-2.2-2.7-4.1-5.3-4.1Z"/></svg>
+</a>
+
+<script>
+(function(){
+  var allNames = [];
+
+  // Load names from API, with localStorage fallback
+  function loadNames() {
+    return fetch('/api/suggestions')
+      .then(res => res.json())
+      .catch(() => JSON.parse(localStorage.getItem('suggestionNames')) || [])
+      .then(names => {
+        allNames = Array.isArray(names) ? names : [];
+        return allNames.sort((a, b) => {
+          const aVotes = (a.thumbsUp || 0) - (a.thumbsDown || 0);
+          const bVotes = (b.thumbsUp || 0) - (b.thumbsDown || 0);
+          return bVotes - aVotes;
+        });
+      });
+  }
+
+  function saveNames(names) {
+    localStorage.setItem('suggestionNames', JSON.stringify(names));
+  }
+
+  function getAnimalEmoji() {
+    const emojis = ['🐴', '🐐', '🐔', '🐑', '🐖', '🐮', '🦙', '🐑', '🦝', '🦌'];
+    return emojis[Math.floor(Math.random() * emojis.length)];
+  }
+
+  function formatVoteDifference(up, down) {
+    const diff = (up || 0) - (down || 0);
+    if (diff > 0) return '+' + diff;
+    return diff.toString();
+  }
+
+  function renderNames(sortType = 'popular') {
+    loadNames().then(function(names) {
+      const list = document.getElementById('names-list');
+
+      if (!names.length) {
+        list.innerHTML = '<div class="names-empty" style="grid-column: 1/-1"><p>No names suggested yet. Be the first! Go back and suggest one.</p></div>';
+        updateStats();
+        return;
+      }
+
+      let sorted = [...names];
+      if (sortType === 'popular') {
+        sorted.sort((a, b) => {
+          const aVotes = (a.thumbsUp || 0) - (a.thumbsDown || 0);
+          const bVotes = (b.thumbsUp || 0) - (b.thumbsDown || 0);
+          return bVotes - aVotes;
+        });
+      } else if (sortType === 'recent') {
+        sorted.sort((a, b) => {
+          const aTime = new Date(a.createdAt || a.timestamp || 0).getTime();
+          const bTime = new Date(b.createdAt || b.timestamp || 0).getTime();
+          return bTime - aTime;
+        });
+      } else if (sortType === 'controversial') {
+        sorted.sort((a, b) => {
+          const aTotal = (a.thumbsUp || 0) + (a.thumbsDown || 0);
+          const bTotal = (b.thumbsUp || 0) + (b.thumbsDown || 0);
+          return bTotal - aTotal;
+        });
+      }
+
+      list.innerHTML = sorted.map((name, idx) => {
+        const myVote = localStorage.getItem('voted-' + name.id);
+        return `
+          <div class="name-card">
+            <div class="name-card-header">
+              <span class="name-emoji">${name.emoji}</span>
+              <h3>${name.name}</h3>
+            </div>
+            <div class="name-card-by">Suggested by ${name.author || 'Anonymous'}</div>
+            <div class="name-card-votes">
+              <button class="vote-btn ${myVote === 'up' ? 'voted-up' : ''}" onclick="voteOnName('${name.id}', 'up')">
+                👍
+                <span class="vote-count">${name.thumbsUp || 0}</span>
+              </button>
+              <button class="vote-btn ${myVote === 'down' ? 'voted-down' : ''}" onclick="voteOnName('${name.id}', 'down')">
+                👎
+                <span class="vote-count">${name.thumbsDown || 0}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateStats();
+    });
+  }
+
+  function updateStats() {
+    loadNames().then(function(names) {
+      document.getElementById('total-names').textContent = names.length;
+
+      let totalVotes = 0;
+      names.forEach(n => {
+        totalVotes += (n.thumbsUp || 0) + (n.thumbsDown || 0);
+      });
+      document.getElementById('total-votes').textContent = totalVotes;
+
+      if (names.length > 0) {
+        const topName = names[0];
+        const topVotes = (topName.thumbsUp || 0) - (topName.thumbsDown || 0);
+        document.getElementById('top-voted').textContent = topName.name + ` (${topVotes > 0 ? '+' : ''}${topVotes})`;
+      }
+    });
+  }
+
+  window.voteOnName = function(id, direction) {
+    fetch('/api/suggestions/' + id + '/vote', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ direction: direction })
+    }).then(res => res.json()).then(data => {
+      if (data.id) {
+        localStorage.setItem('voted-' + id, direction);
+        renderNames();
+      }
+    }).catch(() => {
+      loadNames().then(function(names) {
+        const name = names.find(n => n.id === id);
+        if (!name) return;
+        const myVote = localStorage.getItem('voted-' + id);
+        if (myVote === direction) {
+          localStorage.removeItem('voted-' + id);
+        } else {
+          localStorage.setItem('voted-' + id, direction);
+        }
+        renderNames();
+      });
+    });
+  };
+
+  window.sortNames = function(type) {
+    renderNames(type);
+  };
+
+  window.addNameSuggestion = function(name, author) {
+    const names = loadNames();
+    const newName = {
+      id: 'name-' + Date.now(),
+      name: name,
+      author: author || 'Anonymous',
+      emoji: getAnimalEmoji(),
+      thumbsUp: 0,
+      thumbsDown: 0,
+      timestamp: Date.now()
+    };
+    names.push(newName);
+    saveNames(names);
+    renderNames();
+  };
+
+  // Initial render
+  renderNames();
+  // Newsletter signup is handled centrally in app.js (real submission via /api/contact)
+})();
+</script>
+
+<script src="app.js?v=36"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "Saint Francis Rescue & Sanctuary",
+  "short_name": "Saint Francis",
+  "description": "A 100% volunteer-run farm animal rescue and sanctuary in Yuma, Arizona.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1f3a2e",
+  "theme_color": "#1f3a2e",
+  "icons": [
+    { "src": "images/logo-mark-sm.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "images/logo-mark.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

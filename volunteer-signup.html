@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volunteer Sign-Up | Saint Francis Rescue &amp; Sanctuary</title>
+<meta name="description" content="Apply to volunteer at Saint Francis Rescue and Sanctuary in Yuma, AZ. Takes two minutes — no experience needed, just reliability and heart.">
+<link rel="canonical" href="https://saintfrancisrescue.org/volunteer-signup">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Volunteer Sign-Up | Saint Francis Rescue &amp; Sanctuary">
+<meta property="og:description" content="Apply to volunteer at Saint Francis Rescue and Sanctuary in Yuma, AZ. Takes two minutes — no experience needed, just reliability and heart.">
+<meta property="og:image" content="https://saintfrancisrescue.org/opengraph.jpg">
+<meta property="og:url" content="https://saintfrancisrescue.org/volunteer-signup">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Volunteer Sign-Up | Saint Francis Rescue &amp; Sanctuary">
+<meta name="twitter:description" content="Apply to volunteer at Saint Francis Rescue and Sanctuary in Yuma, AZ. Takes two minutes — no experience needed, just reliability and heart.">
+<meta name="twitter:image" content="https://saintfrancisrescue.org/opengraph.jpg">
+<meta name="theme-color" content="#1f3a2e">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="images/logo-mark-sm.png" sizes="any">
+<link rel="apple-touch-icon" href="images/logo-mark-sm.png">
+<link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-wght-normal.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/hanken-400.woff2" crossorigin>
+<link rel="stylesheet" href="styles.css?v=36">
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<style>
+.vsup-wrap{display:flex;justify-content:center;padding:3rem 1rem 5rem}
+.vsup-card{width:100%;max-width:600px;background:#fff;border-radius:26px;box-shadow:0 1px 2px rgba(31,58,46,.05),0 26px 64px -30px rgba(31,58,46,.42);padding:clamp(24px,5vw,42px);position:relative;overflow:hidden}
+.vsup-deco{position:absolute;top:-42px;right:-34px;color:#EEF1E7;pointer-events:none}
+.vsup-hdr{display:flex;align-items:center;gap:11px;position:relative;z-index:1}
+.vsup-logo-badge{width:40px;height:40px;border-radius:12px;background:#1F3A2E;color:#EAF0E6;display:flex;align-items:center;justify-content:center;flex:none}
+.vsup-brand-text{display:flex;flex-direction:column;line-height:1.05}
+.vsup-brand-name{font-family:'Fraunces Variable',Georgia,serif;font-weight:700;font-size:18px;letter-spacing:-.01em}
+.vsup-brand-sub{font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#7C8470}
+.vsup-progress{margin-top:24px}
+.vsup-progress-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.vsup-step-name{font-size:13px;font-weight:700;color:#1F3A2E;text-transform:uppercase;letter-spacing:.06em}
+.vsup-step-count{font-size:13.5px;font-weight:600;color:#928B7B}
+.vsup-track{height:9px;border-radius:999px;background:#E7E0D0;position:relative}
+.vsup-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#2F5A44,#1F3A2E);position:relative;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.vsup-paw-dot{position:absolute;right:-12px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #1F3A2E;color:#1F3A2E;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(31,58,46,.28)}
+.vsup-fieldset{border:none;margin-top:26px;animation:vfadeUp .4s ease both}
+.vsup-legend{font-family:'Fraunces Variable',Georgia,serif;font-weight:700;font-size:21px;margin-bottom:3px}
+.vsup-sub{font-size:14.5px;color:#827B6C;margin-bottom:20px}
+.vsup-field{margin-bottom:18px}
+.vsup-label{display:block;font-weight:600;font-size:15px;margin-bottom:6px}
+.vsup-opt{color:#A8A18F;font-weight:500}
+.vsup-in,.vsup-sel,.vsup-ta{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:14px 16px;border-radius:14px;border:1.5px solid #E2DAC8;background:#FBF8F1;color:#23291F;outline:none;transition:border-color .15s,box-shadow .15s}
+.vsup-in:focus,.vsup-sel:focus,.vsup-ta:focus{border-color:#1F3A2E;box-shadow:0 0 0 4px rgba(31,58,46,.15);background:#fff}
+.vsup-in.err,.vsup-sel.err,.vsup-ta.err{border-color:#C25334;background:#FBF1EC}
+.vsup-ta{resize:vertical;line-height:1.5;min-height:84px}
+.vsup-err{color:#B0472B;font-size:13.5px;margin:7px 2px 0;display:flex;gap:6px;align-items:center}
+.vsup-help{font-size:13px;color:#A8A18F;margin:7px 2px 0}
+.vsup-minor-box{margin-top:14px;padding:18px;background:#FBF7EE;border:1px solid #ECE3D2;border-radius:18px;animation:vfadeUp .3s ease both}
+.vsup-chip-list{display:flex;flex-direction:column;gap:10px}
+.vsup-chip{width:100%;text-align:left;display:grid;grid-template-columns:24px 1fr 22px;align-items:center;gap:14px;padding:15px 16px;border-radius:16px;cursor:pointer;font-family:inherit;font-size:inherit;transition:all .15s;background:#FBF8F1;border:1.5px solid #E7DFCD;color:#857E6F}
+.vsup-chip:hover{border-color:#C6BEA9}
+.vsup-chip.on{background:#ECF1EC;border-color:#1F3A2E;color:#1F3A2E;box-shadow:0 6px 16px -8px rgba(31,58,46,.5)}
+.vsup-chip-check{width:22px;height:22px;border-radius:50%;border:1.5px solid #D2C9B5;display:flex;align-items:center;justify-content:center;color:transparent;font-size:13px;font-weight:700;transition:all .15s}
+.vsup-chip.on .vsup-chip-check{border-color:#1F3A2E;background:#1F3A2E;color:#fff}
+.vsup-chip-label{font-weight:600;font-size:15.5px}
+.vsup-chip-desc{font-size:13px;color:#857E6F;font-weight:400}
+.vsup-chip.on .vsup-chip-desc{color:#2F5A44}
+.vsup-pills{display:flex;gap:8px;flex-wrap:wrap}
+.vsup-pill{padding:10px 16px;border-radius:999px;cursor:pointer;font-family:inherit;font-size:14.5px;font-weight:600;transition:all .15s;background:#FBF8F1;border:1.5px solid #E7DFCD;color:#5F6557}
+.vsup-pill:hover{border-color:#C6BEA9}
+.vsup-pill.on{background:#1F3A2E;border-color:#1F3A2E;color:#fff;box-shadow:0 6px 14px -8px rgba(31,58,46,.65)}
+.vsup-transport-box{margin-top:22px;padding:18px;background:#FBF7EE;border:1px solid #ECE3D2;border-radius:18px;animation:vfadeUp .35s ease both}
+.vsup-waiver-label{display:flex;gap:11px;align-items:flex-start;cursor:pointer;font-size:13.5px;line-height:1.5;color:#494F40;padding:13px 14px;background:#fff;border-radius:13px;transition:border-color .15s}
+.vsup-nav{display:flex;gap:12px;margin-top:28px}
+.vsup-back{flex:none;padding:14px 22px;border-radius:14px;border:1.5px solid #E2DAC8;background:#fff;color:#5F6557;font:inherit;font-weight:600;font-size:15.5px;cursor:pointer;transition:all .15s}
+.vsup-back:hover{background:#FBF7EE;border-color:#D2C9B5}
+.vsup-next{flex:1;padding:14px 22px;border-radius:14px;border:none;background:#1F3A2E;color:#fff;font:inherit;font-weight:700;font-size:15.5px;cursor:pointer;box-shadow:0 8px 20px -8px rgba(31,58,46,.7);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.vsup-next:hover{background:#2C5240;transform:translateY(-1px)}
+.vsup-next:active{transform:translateY(0)}
+.vsup-next:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.vsup-foot-note{text-align:center;font-size:12.5px;color:#B0A992;margin-top:16px}
+.vsup-ty{text-align:center;padding:14px 4px 6px;animation:vfadeUp .5s ease both;position:relative;z-index:1}
+.vsup-ty-paw{width:84px;height:84px;border-radius:50%;background:#EAF0E6;color:#1F3A2E;display:flex;align-items:center;justify-content:center;margin:18px auto 0;animation:vpawPop .6s cubic-bezier(.34,1.56,.64,1) both}
+.vsup-ty-paw-inner{display:block;animation:vsoftBob 3s ease-in-out infinite .6s}
+.vsup-sanctuary-card{text-align:left;background:#1F3A2E;border-radius:20px;padding:24px;margin-top:26px;position:relative;overflow:hidden}
+.vsup-sanctuary-deco{position:absolute;top:-26px;right:-20px;color:rgba(255,255,255,.06);pointer-events:none}
+.vsup-next-steps{text-align:left;background:#FBF7EE;border:1px solid #ECE3D2;border-radius:20px;padding:22px;margin-top:18px}
+.vsup-step-item{display:flex;gap:13px;align-items:flex-start;margin-bottom:15px}
+.vsup-step-item:last-child{margin-bottom:0}
+.vsup-step-icon{width:26px;height:26px;border-radius:50%;background:#EAF0E6;color:#1F3A2E;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.vsup-minor-note{background:#FBF7EE;border:1px solid #ECE3D2;border-radius:16px;padding:15px 18px;margin-top:20px;font-size:14px;line-height:1.5;color:#7A5A33;text-align:left;display:flex;gap:11px;align-items:flex-start}
+.vsup-reset{margin-top:24px;padding:12px 22px;border-radius:14px;border:1.5px solid #E2DAC8;background:#fff;color:#5F6557;font:inherit;font-weight:600;font-size:14.5px;cursor:pointer;transition:all .15s}
+.vsup-reset:hover{background:#FBF7EE;border-color:#D2C9B5}
+@keyframes vfadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes vpawPop{0%{opacity:0;transform:scale(.4) rotate(-12deg)}60%{transform:scale(1.12) rotate(4deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes vsoftBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media(prefers-reduced-motion:reduce){.vsup-fieldset,.vsup-ty,.vsup-ty-paw,.vsup-ty-paw-inner,.vsup-minor-box,.vsup-transport-box{animation:none!important}}
+</style>
+</head>
+<body data-page="volunteer-signup">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html" aria-label="Saint Francis Rescue and Sanctuary home">
+      <img loading="lazy" src="images/logo.webp" alt="Saint Francis Rescue logo" width="42" height="42" style="object-fit:contain">
+      <span class="brand-text"><strong>Saint Francis</strong><span>Rescue &amp; Sanctuary</span></span>
+    </a>
+    <nav class="nav-links" id="primary-nav" aria-label="Primary">
+      <a href="index.html" data-nav="home">Home</a>
+      <a href="animals.html" data-nav="animals">Our Animals</a>
+      <a href="volunteer.html" data-nav="volunteer">Volunteer</a>
+      <a href="fundraiser.html" data-nav="fundraiser">Auction &amp; Fundraiser</a>
+      <div class="nav-dropdown-wrapper">
+        <a href="about.html" data-nav="about" class="nav-dropdown-toggle">Our Story <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-left:4px"><path d="M6 9l6 6 6-6"/></svg></a>
+        <div class="nav-dropdown-menu">
+          <a href="ways-to-help.html">Ways to Help</a>
+          <a href="corporate.html">Corporate Giving</a>
+          <a href="press.html">Press &amp; Media</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="contact.html" data-nav="contact">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-gold btn-sm" href="donate.html">Donate</a>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+<a id="top"></a>
+
+<main id="main-content" tabindex="-1">
+<section class="pagehead" style="min-height:280px">
+  <div class="pagehead-bg"><img fetchpriority="high" src="images/volunteer2.webp" alt="A rescue dog offering a paw to a volunteer at Saint Francis"></div>
+  <div class="wrap pagehead-inner">
+    <div class="crumb"><a href="index.html">Home</a> / <a href="volunteer.html">Volunteer</a> / Sign Up</div>
+    <span class="eyebrow">Volunteer application</span>
+    <h1 style="margin-top:.6rem">Show up for the animals.</h1>
+    <p class="lead">We&rsquo;re 100% volunteer-run &mdash; no paid staff, just people who choose to be here. Fill out the form below and we&rsquo;ll find where you fit. Takes about two minutes.</p>
+  </div>
+</section>
+
+<!-- Quick Interest Section - inline, not modal -->
+<section class="section tone-cream">
+  <div class="wrap" style="max-width:900px">
+    <div class="form-card reveal" style="background:var(--cream);border-left:4px solid var(--gold)">
+      <h2 style="font-size:1.4rem;margin-bottom:.5rem;color:var(--pine)">🤝 What interests you?</h2>
+      <p style="color:var(--muted);margin-bottom:1.8rem">Just 2 quick questions to help us match you with volunteer work you'll love.</p>
+      <form id="quick-interest-form" style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:700px">
+        <div class="field" style="grid-column:1/-1">
+          <label style="font-weight:500;margin-bottom:.4rem;display:block">What type of volunteer work interests you?</label>
+          <select id="qi-role" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
+            <option value="">Select your interest</option>
+            <option value="daily-care">Daily animal care (feeding, water, cleaning)</option>
+            <option value="transport">Transport & events</option>
+            <option value="maintenance">Property & maintenance</option>
+            <option value="social">Social media & communications</option>
+            <option value="specialized">Specialized (farrier, vet tech, grant writing)</option>
+            <option value="not-sure">Not sure yet</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label style="font-weight:500;margin-bottom:.4rem;display:block">How much time can you commit?</label>
+          <select id="qi-time" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
+            <option value="">Select timeframe</option>
+            <option value="few-hours-month">A few hours per month</option>
+            <option value="weekly">Weekly (regular shift)</option>
+            <option value="flexible">Flexible as needed</option>
+            <option value="not-sure">Not sure yet</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-gold" style="grid-column:1/-1;justify-self:start;width:auto;padding-left:2rem;padding-right:2rem">Next →</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section tone-bone2">
+  <div class="vsup-wrap">
+    <div class="vsup-card" id="vsup-card">
+
+      <div class="vsup-deco" aria-hidden="true">
+        <svg width="190" height="190" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="16.5" rx="5.2" ry="4.2"/><circle cx="5.4" cy="11" r="2.1"/><circle cx="9.8" cy="7.2" r="2.2"/><circle cx="14.2" cy="7.2" r="2.2"/><circle cx="18.6" cy="11" r="2.1"/></svg>
+      </div>
+
+      <header class="vsup-hdr">
+        <span class="vsup-logo-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="16.5" rx="5.2" ry="4.2"/><circle cx="5.4" cy="11" r="2.1"/><circle cx="9.8" cy="7.2" r="2.2"/><circle cx="14.2" cy="7.2" r="2.2"/><circle cx="18.6" cy="11" r="2.1"/></svg>
+        </span>
+        <span class="vsup-brand-text">
+          <span class="vsup-brand-name">Saint Francis</span>
+          <span class="vsup-brand-sub">Rescue &amp; Sanctuary &middot; Yuma, AZ</span>
+        </span>
+      </header>
+
+      <div id="vsup-form-body"></div>
+
+    </div>
+  </div>
+</section>
+
+</main>
+<section class="pre-footer-strip">
+  <div class="wrap">
+    <div class="pfs-inner">
+      <div class="pfs-text">
+        <strong>Stay close to the animals.</strong>
+        <span>Get occasional updates on rescues, residents, and ways to help.</span>
+      </div>
+      <div>
+        <div class="pfs-form" id="pfs-form">
+          <input type="email" placeholder="your@email.com" aria-label="Email address" id="pfs-email" autocomplete="email">
+          <button class="btn btn-clay btn-sm" type="button" id="pfs-submit">Keep me posted</button>
+        </div>
+        <p class="pfs-note">No spam. Unsubscribe anytime. We won&rsquo;t share your info.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+// Quick interest form logic
+document.addEventListener("DOMContentLoaded", function() {
+  var qiForm = document.getElementById('quick-interest-form');
+
+  if (qiForm) {
+    qiForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Store quick interest answers
+      sessionStorage.setItem('qi-role', document.getElementById('qi-role').value);
+      sessionStorage.setItem('qi-time', document.getElementById('qi-time').value);
+      // Scroll to the main form
+      var mainForm = document.querySelector('.vsup-card');
+      if (mainForm) mainForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+});
+</script>
+
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <img loading="lazy" src="images/logo.webp" alt="" width="44" height="44" style="object-fit:contain">
+          <strong>Saint Francis</strong>
+        </div>
+        <p style="max-width:34ch;color:rgba(251,248,241,.72);font-size:.95rem">A volunteer-run farm animal rescue &amp; sanctuary in Yuma, Arizona. No office. No paid staff. Just people who show up for the animals.</p>
+        <div class="socials">
+          <a href="https://www.facebook.com/profile.php?id=61585411116127" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5.5H14c-2 0-3.5 1.5-3.5 3.6V11H8v3h2.5v6.5h3V14H16l.5-3h-3V9.4c0-.6.4-.9 1-.9Z"/></svg></a>
+          <a href="https://www.instagram.com/saintfrancisrescueandsanctuary" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.6" cy="7.4" r="1" fill="currentColor" stroke="none"/></svg></a>
+        </div>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <div class="foot-links">
+          <a href="index.html">Home</a>
+          <a href="animals.html">Our Animals</a>
+          <a href="volunteer.html">Volunteer</a>
+          <a href="fundraiser.html">Auction &amp; Fundraiser</a>
+          <a href="about.html">Our Story</a>
+          <a href="contact.html">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4>Support</h4>
+        <div class="foot-links">
+          <a href="donate.html">Donate through Zeffy</a>
+          <a href="donate.html">Donate</a>
+          <a href="ways-to-help.html">Ways to Help</a>
+          <a href="fundraiser.html">Fundraiser Auction</a>
+          <a href="volunteer-signup.html">Become a Volunteer</a>
+          <a href="corporate.html">Corporate Giving</a>
+          <a href="faq.html">FAQ</a>
+          <a href="press.html">Press &amp; Media</a>
+        </div>
+      </div>
+      <div class="foot-contact">
+        <h4>Find Us</h4>
+        <p>Saint Francis Rescue and Sanctuary of Yuma</p>
+        <p>PO Box 25413</p>
+        <p>Yuma, AZ 85367</p>
+        <p style="margin-top:.6rem">EIN: 99-0599742</p>
+        <a href="contact.html" class="btn btn-light btn-sm" style="margin-top:.9rem">Send a message</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>&copy; <span data-year></span> Saint Francis Rescue and Sanctuary of Yuma. All rights reserved.</span>
+      <nav class="foot-legal" aria-label="Legal">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="accessibility.html">Accessibility</a>
+        <a href="press.html">Press</a>
+      </nav>
+    </div>
+    <div class="foot-bottom" style="border-top:0;padding-top:0">
+      <span class="badge501">Registered 501(c)(3) Non-Profit &middot; Donations are tax-deductible</span>
+      <span class="foot-credit">Designed by Venom Vision Designs</span>
+    </div>
+  </div>
+</footer>
+<a class="back-top" href="#top" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:22px;height:22px" aria-hidden="true"><ellipse cx="7.2" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="12" cy="7.6" rx="1.8" ry="2.5"/><ellipse cx="16.8" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="4.6" cy="14" rx="1.5" ry="2"/><ellipse cx="19.4" cy="14" rx="1.5" ry="2"/><path d="M12 12.4c-2.6 0-4.8 1.9-5.3 4.1-.3 1.4.8 2.6 2.2 2.6.9 0 1.7-.4 3.1-.4s2.2.4 3.1.4c1.4 0 2.5-1.2 2.2-2.6-.5-2.2-2.7-4.1-5.3-4.1Z"/></svg>
+</a>
+
+<script>
+(function() {
+  var PAW_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="16.5" rx="5.2" ry="4.2"/><circle cx="5.4" cy="11" r="2.1"/><circle cx="9.8" cy="7.2" r="2.2"/><circle cx="14.2" cy="7.2" r="2.2"/><circle cx="18.6" cy="11" r="2.1"/></svg>';
+
+  var ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  var isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/.test(ua);
+
+  var STEP_NAMES = { 1: 'About you', 2: 'Your interests', 3: 'Your availability', 4: 'A few more details' };
+  var INTEREST_DEFS = [
+    { key: 'care', label: 'Daily animal care', desc: 'Feeding, water, cleaning & wellness checks' },
+    { key: 'socialization', label: 'Socialization & enrichment', desc: 'Patient, calm time building trust' },
+    { key: 'transport', label: 'Events & transport', desc: 'Vet runs, adoption days & logistics' },
+    { key: 'maintenance', label: 'Property & maintenance', desc: 'Fences, enclosures & repairs' },
+    { key: 'fostering', label: 'Fostering', desc: 'A temporary home for an animal in need' },
+    { key: 'admin', label: 'Admin & remote help', desc: 'Photos, social media & fundraising' }
+  ];
+  var DAY_DEFS = [['mon','Mon'],['tue','Tue'],['wed','Wed'],['thu','Thu'],['fri','Fri'],['sat','Sat'],['sun','Sun']];
+  var TIME_DEFS = [['earlyam','Early mornings'],['morning','Mornings'],['afternoon','Afternoons'],['evening','Evenings']];
+
+  var state = {
+    step: 1,
+    minorSubmitted: false,
+    submitting: false,
+    data: {
+      firstName: '', lastName: '', email: '', phone: '', age: '',
+      guardianName: '', guardianContact: '', waiverAgreed: false,
+      interests: [], transport: '',
+      availDays: [], availTimes: [], frequency: '',
+      experienceLevel: '', experienceDetail: '',
+      heat: '', accessibility: '', accessibilityNeeds: '', notes: ''
+    },
+    errors: {}
+  };
+
+  function h(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function validate(step) {
+    var d = state.data, e = {};
+    if (step === 1) {
+      if (!d.firstName.trim()) e.firstName = "We’d love to know your name.";
+      if (!d.email.trim()) e.email = "We’ll need an email to reach you.";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())) e.email = "Hmm, that email doesn’t look quite right.";
+      if (!d.age) e.age = "Please let us know your age range.";
+      if (d.age === 'minor') {
+        if (!d.guardianName.trim()) e.guardianName = "We’ll need your parent or guardian’s name.";
+        if (!d.guardianContact.trim()) e.guardianContact = "Please add a way to reach your parent or guardian.";
+        if (!d.waiverAgreed) e.waiverAgreed = "Please confirm the waiver so we can welcome you safely.";
+      }
+    }
+    if (step === 2) {
+      if (d.interests.length === 0) e.interests = "Pick at least one — there’s no wrong choice.";
+    }
+    return e;
+  }
+
+  function renderProgress(step) {
+    if (step > 4) return '';
+    var pct = (step / 4) * 100;
+    return '<div class="vsup-progress" role="group" aria-label="Form progress">' +
+      '<div class="vsup-progress-hdr">' +
+        '<span class="vsup-step-name">' + h(STEP_NAMES[step]) + '</span>' +
+        '<span class="vsup-step-count">Step ' + step + ' of 4</span>' +
+      '</div>' +
+      '<div class="vsup-track">' +
+        '<div class="vsup-fill" style="width:' + pct + '%">' +
+          '<span class="vsup-paw-dot">' + PAW_SVG + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function errHTML(key) {
+    var msg = state.errors[key];
+    if (!msg) return '';
+    return '<p class="vsup-err" role="alert"><span aria-hidden="true">⚠</span>' + h(msg) + '</p>';
+  }
+
+  function inputClass(base, key) {
+    return base + (state.errors[key] ? ' err' : '');
+  }
+
+  function renderStep1() {
+    var d = state.data;
+    var showMinor = d.age === 'minor';
+    var waiverBorder = state.errors.waiverAgreed ? '#C25334' : '#E7DFCD';
+    return '<fieldset class="vsup-fieldset">' +
+      '<legend class="vsup-legend">Tell us a little about yourself</legend>' +
+      '<p class="vsup-sub">Just the basics — we’ll only use this to stay in touch.</p>' +
+
+      '<div class="vsup-field">' +
+        '<label for="vs-firstName" class="vsup-label">First name</label>' +
+        '<input id="vs-firstName" type="text" class="' + inputClass('vsup-in','firstName') + '" value="' + h(d.firstName) + '" placeholder="e.g. Sam" autocomplete="given-name" aria-required="true"' + (state.errors.firstName ? ' aria-invalid="true"' : '') + '>' +
+        errHTML('firstName') +
+      '</div>' +
+
+      '<div class="vsup-field">' +
+        '<label for="vs-lastName" class="vsup-label">Last name <span class="vsup-opt">(optional)</span></label>' +
+        '<input id="vs-lastName" type="text" class="vsup-in" value="' + h(d.lastName) + '" placeholder="e.g. Rivera" autocomplete="family-name">' +
+      '</div>' +
+
+      '<div class="vsup-field">' +
+        '<label for="vs-email" class="vsup-label">Email</label>' +
+        '<input id="vs-email" type="email" class="' + inputClass('vsup-in','email') + '" value="' + h(d.email) + '" placeholder="you@example.com" autocomplete="email" aria-required="true"' + (state.errors.email ? ' aria-invalid="true"' : '') + '>' +
+        errHTML('email') +
+        '<p class="vsup-help">We’ll never share it or flood your inbox.</p>' +
+      '</div>' +
+
+      '<div class="vsup-field">' +
+        '<label for="vs-phone" class="vsup-label">Phone <span class="vsup-opt">(optional)</span></label>' +
+        '<input id="vs-phone" type="tel" class="vsup-in" value="' + h(d.phone) + '" placeholder="(928) 123-4567" autocomplete="tel">' +
+        '<p class="vsup-help">Handy for last-minute transport or foster needs.</p>' +
+      '</div>' +
+
+      '<div class="vsup-field">' +
+        '<label for="vs-age" class="vsup-label">Your age</label>' +
+        '<select id="vs-age" class="' + inputClass('vsup-sel','age') + '" aria-required="true"' + (state.errors.age ? ' aria-invalid="true"' : '') + '>' +
+          '<option value=""' + (!d.age ? ' selected' : '') + '>Select your age range…</option>' +
+          '<option value="adult"' + (d.age === 'adult' ? ' selected' : '') + '>18 or older</option>' +
+          '<option value="minor"' + (d.age === 'minor' ? ' selected' : '') + '>Under 18</option>' +
+        '</select>' +
+        errHTML('age') +
+        '<p class="vsup-help">Volunteers of every age are welcome — under-18s just bring a parent or guardian along.</p>' +
+
+        (showMinor ?
+          '<div class="vsup-minor-box">' +
+            '<p style="font-weight:600;font-size:15px;margin-bottom:3px">Wonderful — younger volunteers are some of our most caring helpers.</p>' +
+            '<p style="font-size:13px;color:#857E6F;margin-bottom:15px">We just need a parent or guardian’s permission and a signed waiver before the first visit.</p>' +
+            '<div class="vsup-field">' +
+              '<label for="vs-guardianName" class="vsup-label" style="font-size:14.5px">Parent or guardian name</label>' +
+              '<input id="vs-guardianName" type="text" class="' + inputClass('vsup-in','guardianName') + '" value="' + h(d.guardianName) + '" placeholder="e.g. Alex Rivera" aria-required="true">' +
+              errHTML('guardianName') +
+            '</div>' +
+            '<div class="vsup-field">' +
+              '<label for="vs-guardianContact" class="vsup-label" style="font-size:14.5px">Parent or guardian email or phone</label>' +
+              '<input id="vs-guardianContact" type="text" class="' + inputClass('vsup-in','guardianContact') + '" value="' + h(d.guardianContact) + '" placeholder="Their best email or phone number" aria-required="true">' +
+              errHTML('guardianContact') +
+            '</div>' +
+            '<label for="vs-waiver" class="vsup-waiver-label" style="border:1.5px solid ' + waiverBorder + '">' +
+              '<input id="vs-waiver" type="checkbox" ' + (d.waiverAgreed ? 'checked' : '') + ' aria-required="true" style="margin-top:2px;width:18px;height:18px;accent-color:#1F3A2E;flex:none;cursor:pointer">' +
+              '<span>As parent or guardian — or with their permission — I agree to complete Saint Francis’s <strong style="color:#23291F">volunteer liability waiver &amp; minor permission form</strong> before the first visit.</span>' +
+            '</label>' +
+            errHTML('waiverAgreed') +
+            '<p class="vsup-help" style="margin-top:9px">We’ll email the waiver to your parent or guardian to sign — no printing required.</p>' +
+          '</div>'
+        : '') +
+      '</div>' +
+    '</fieldset>';
+  }
+
+  function renderStep2() {
+    var d = state.data;
+    var showTransport = d.interests.includes('transport');
+    var chips = INTEREST_DEFS.map(function(o) {
+      var sel = d.interests.includes(o.key);
+      return '<button type="button" class="vsup-chip' + (sel ? ' on' : '') + '" data-interest="' + o.key + '" aria-pressed="' + sel + '">' +
+        '<span style="display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="12" cy="16.5" rx="5.2" ry="4.2"/><circle cx="5.4" cy="11" r="2.1"/><circle cx="9.8" cy="7.2" r="2.2"/><circle cx="14.2" cy="7.2" r="2.2"/><circle cx="18.6" cy="11" r="2.1"/></svg></span>' +
+        '<span style="display:flex;flex-direction:column;gap:1px"><span class="vsup-chip-label">' + h(o.label) + '</span><span class="vsup-chip-desc">' + h(o.desc) + '</span></span>' +
+        '<span class="vsup-chip-check">✓</span>' +
+      '</button>';
+    }).join('');
+
+    var transportPills = [
+      { label: 'Yes, I can drive', val: 'yes' },
+      { label: 'Not at the moment', val: 'no' }
+    ].map(function(t) {
+      return '<button type="button" class="vsup-pill' + (d.transport === t.val ? ' on' : '') + '" data-transport="' + t.val + '" aria-pressed="' + (d.transport === t.val) + '">' + h(t.label) + '</button>';
+    }).join('');
+
+    return '<fieldset class="vsup-fieldset">' +
+      '<legend class="vsup-legend">Where would you like to help?</legend>' +
+      '<p class="vsup-sub">Choose what feels right — pick as many as you like. Reliability matters more than experience here.</p>' +
+      '<div class="vsup-chip-list">' + chips + '</div>' +
+      errHTML('interests') +
+      (showTransport ?
+        '<div class="vsup-transport-box">' +
+          '<p style="font-weight:600;font-size:15px;margin-bottom:3px">Since you’re up for transport — do you have access to a vehicle?</p>' +
+          '<p style="font-size:13px;color:#857E6F;margin-bottom:13px">No pressure either way. It just helps us plan vet runs and pickups.</p>' +
+          '<div class="vsup-pills">' + transportPills + '</div>' +
+        '</div>'
+      : '') +
+    '</fieldset>';
+  }
+
+  function renderStep3() {
+    var d = state.data;
+    var dayPills = DAY_DEFS.map(function(pair) {
+      var sel = d.availDays.includes(pair[0]);
+      return '<button type="button" class="vsup-pill' + (sel ? ' on' : '') + '" data-day="' + pair[0] + '" aria-pressed="' + sel + '">' + pair[1] + '</button>';
+    }).join('');
+    var timePills = TIME_DEFS.map(function(pair) {
+      var sel = d.availTimes.includes(pair[0]);
+      return '<button type="button" class="vsup-pill' + (sel ? ' on' : '') + '" data-time="' + pair[0] + '" aria-pressed="' + sel + '">' + h(pair[1]) + '</button>';
+    }).join('');
+
+    return '<fieldset class="vsup-fieldset">' +
+      '<legend class="vsup-legend">When can you show up?</legend>' +
+      '<p class="vsup-sub">All optional — even a few hours a month makes a real difference. Reliability matters more than frequency.</p>' +
+      '<p style="font-weight:600;font-size:15px;margin-bottom:10px">Days you’re usually free</p>' +
+      '<div class="vsup-pills" style="margin-bottom:22px">' + dayPills + '</div>' +
+      '<p style="font-weight:600;font-size:15px;margin-bottom:5px">Times that suit you</p>' +
+      '<p class="vsup-help" style="margin-bottom:11px">Early-morning shifts are where we need the most hands — before Yuma hits the heat.</p>' +
+      '<div class="vsup-pills" style="margin-bottom:22px">' + timePills + '</div>' +
+      '<div class="vsup-field">' +
+        '<label for="vs-frequency" class="vsup-label">How often could you help?</label>' +
+        '<select id="vs-frequency" class="vsup-sel">' +
+          '<option value=""' + (!d.frequency ? ' selected' : '') + '>Choose what feels comfortable…</option>' +
+          '<option value="weekly"' + (d.frequency === 'weekly' ? ' selected' : '') + '>Weekly — count me in</option>' +
+          '<option value="monthly"' + (d.frequency === 'monthly' ? ' selected' : '') + '>A few times a month</option>' +
+          '<option value="occasionally"' + (d.frequency === 'occasionally' ? ' selected' : '') + '>Occasionally, when I can</option>' +
+          '<option value="events"' + (d.frequency === 'events' ? ' selected' : '') + '>Just one-off events</option>' +
+        '</select>' +
+      '</div>' +
+    '</fieldset>';
+  }
+
+  function renderStep4() {
+    var d = state.data;
+    var handsOn = d.interests.some(function(k) { return ['care','socialization','fostering'].includes(k); });
+    var accessPills = [
+      { label: 'No, all set', val: 'no' },
+      { label: 'Yes, a little', val: 'yes' }
+    ].map(function(a) {
+      return '<button type="button" class="vsup-pill' + (d.accessibility === a.val ? ' on' : '') + '" data-access="' + a.val + '" aria-pressed="' + (d.accessibility === a.val) + '">' + h(a.label) + '</button>';
+    }).join('');
+
+    return '<fieldset class="vsup-fieldset">' +
+      '<legend class="vsup-legend">A few last things</legend>' +
+      '<p class="vsup-sub">So we can welcome you in the way that suits you best.</p>' +
+
+      (handsOn ?
+        '<div class="vsup-field">' +
+          '<label for="vs-experience" class="vsup-label">Have you cared for animals before?</label>' +
+          '<select id="vs-experience" class="vsup-sel">' +
+            '<option value=""' + (!d.experienceLevel ? ' selected' : '') + '>No need to be an expert…</option>' +
+            '<option value="first"' + (d.experienceLevel === 'first' ? ' selected' : '') + '>First time — and ready to learn</option>' +
+            '<option value="some"' + (d.experienceLevel === 'some' ? ' selected' : '') + '>A little experience</option>' +
+            '<option value="lots"' + (d.experienceLevel === 'lots' ? ' selected' : '') + '>Lots of experience</option>' +
+          '</select>' +
+          ((d.experienceLevel === 'some' || d.experienceLevel === 'lots') ?
+            '<div style="margin-top:13px;animation:vfadeUp .3s ease both">' +
+              '<label for="vs-expDetail" class="vsup-label" style="font-size:14.5px">Tell us about it <span class="vsup-opt">(optional)</span></label>' +
+              '<textarea id="vs-expDetail" class="vsup-ta" rows="3" placeholder="Animals you’ve cared for, shelters or rescues you’ve helped, skills you’d love to use…">' + h(d.experienceDetail) + '</textarea>' +
+            '</div>'
+          : '') +
+        '</div>'
+      : '') +
+
+      '<div class="vsup-field">' +
+        '<label for="vs-heat" class="vsup-label">Comfortable with outdoor work in the Arizona heat? <span class="vsup-opt">(optional)</span></label>' +
+        '<select id="vs-heat" class="vsup-sel">' +
+          '<option value=""' + (!d.heat ? ' selected' : '') + '>No need to be a desert pro…</option>' +
+          '<option value="yes"' + (d.heat === 'yes' ? ' selected' : '') + '>Yes — bring it on</option>' +
+          '<option value="mornings"' + (d.heat === 'mornings' ? ' selected' : '') + '>Best in mornings or shade</option>' +
+          '<option value="indoor"' + (d.heat === 'indoor' ? ' selected' : '') + '>I’d prefer indoor or remote tasks</option>' +
+        '</select>' +
+      '</div>' +
+
+      '<div class="vsup-field">' +
+        '<p style="font-weight:600;font-size:15px;margin-bottom:3px">Any accessibility needs we can support?</p>' +
+        '<p style="font-size:13px;color:#857E6F;margin-bottom:11px">We’ll happily adjust tasks, timing, or surroundings — everyone’s welcome here.</p>' +
+        '<div class="vsup-pills">' + accessPills + '</div>' +
+        (d.accessibility === 'yes' ?
+          '<div style="margin-top:13px;animation:vfadeUp .3s ease both">' +
+            '<label for="vs-accessNeeds" class="vsup-label" style="font-size:14.5px">How can we help you thrive?</label>' +
+            '<textarea id="vs-accessNeeds" class="vsup-ta" rows="3" placeholder="Tell us anything that would make volunteering easier and more comfortable for you.">' + h(d.accessibilityNeeds) + '</textarea>' +
+          '</div>'
+        : '') +
+      '</div>' +
+
+      '<div class="vsup-field">' +
+        '<label for="vs-notes" class="vsup-label">Anything else you’d like us to know? <span class="vsup-opt">(optional)</span></label>' +
+        '<textarea id="vs-notes" class="vsup-ta" rows="3" placeholder="Questions, a favourite kind of animal, what drew you to Saint Francis…">' + h(d.notes) + '</textarea>' +
+      '</div>' +
+    '</fieldset>';
+  }
+
+  function renderThankYou() {
+    var d = state.data;
+    var iosNote = isIOS ? '<p style="font-size:12.5px;line-height:1.5;color:#9FB6A7;margin-top:13px;display:flex;gap:7px;align-items:flex-start;position:relative;z-index:1"><span aria-hidden="true">📱</span><span>On your iPhone? Tap your browser’s <strong style="color:#CFDAD0;font-weight:600">Share → Add to Home Screen</strong> and it runs just like an app — no download needed.</span></p>' : '';
+    var androidNote = isAndroid ? '<p style="font-size:12.5px;line-height:1.5;color:#9FB6A7;margin-top:13px;display:flex;gap:7px;align-items:flex-start;position:relative;z-index:1"><span aria-hidden="true">📱</span><span>On Android? You’ll see a <strong style="color:#CFDAD0;font-weight:600">prompt to install the app</strong> — just tap Install and it lives right on your home screen.</span></p>' : '';
+    var otherNote = (!isIOS && !isAndroid) ? '<p style="font-size:12.5px;line-height:1.5;color:#9FB6A7;margin-top:13px;display:flex;gap:7px;align-items:flex-start;position:relative;z-index:1"><span aria-hidden="true">📱</span><span>On your phone? <strong style="color:#CFDAD0;font-weight:600">iPhone:</strong> tap Share → Add to Home Screen. <strong style="color:#CFDAD0;font-weight:600">Android:</strong> tap the install prompt. It runs just like an app — no download needed.</span></p>' : '';
+
+    return '<div class="vsup-ty">' +
+      '<div class="vsup-ty-paw" aria-hidden="true">' +
+        '<span class="vsup-ty-paw-inner"><svg width="46" height="46" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="16.5" rx="5.2" ry="4.2"/><circle cx="5.4" cy="11" r="2.1"/><circle cx="9.8" cy="7.2" r="2.2"/><circle cx="14.2" cy="7.2" r="2.2"/><circle cx="18.6" cy="11" r="2.1"/></svg></span>' +
+      '</div>' +
+      '<h2 style="font-family:\'Fraunces Variable\',Georgia,serif;font-weight:700;font-size:clamp(26px,6.5vw,33px);line-height:1.12;letter-spacing:-.015em;margin-top:22px">You’re in, ' + h(d.firstName) + '.</h2>' +
+      '<p style="font-size:16.5px;line-height:1.55;color:#5F6557;max-width:44ch;margin:12px auto 0">Thank you for being willing to show up. Every animal at Saint Francis is safe because of people who choose to — and now that’s you.</p>' +
+
+      '<div class="vsup-sanctuary-card">' +
+        '<div class="vsup-sanctuary-deco" aria-hidden="true"><svg width="130" height="130" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="16.5" rx="5.2" ry="4.2"/><circle cx="5.4" cy="11" r="2.1"/><circle cx="9.8" cy="7.2" r="2.2"/><circle cx="14.2" cy="7.2" r="2.2"/><circle cx="18.6" cy="11" r="2.1"/></svg></div>' +
+        '<span style="display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#A9C4B2;position:relative;z-index:1">Your next step</span>' +
+        '<p style="font-family:\'Fraunces Variable\',Georgia,serif;font-weight:700;font-size:21px;color:#fff;margin-top:7px;line-height:1.2;position:relative;z-index:1">Set up SanctuaryBase</p>' +
+        '<p style="font-size:14.5px;line-height:1.55;color:#CFDAD0;margin-top:8px;position:relative;z-index:1">It’s your volunteer home base. Create your account to book shifts, check off tasks as you go, and watch the care you give add up over time.</p>' +
+        '<a href="https://sanctuarybase.pages.dev/" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;padding:13px 22px;border-radius:13px;background:#fff;color:#1F3A2E;font-weight:700;font-size:15px;text-decoration:none;box-shadow:0 8px 20px -10px rgba(0,0,0,.5);transition:transform .15s;position:relative;z-index:1">Create your account <span aria-hidden="true">→</span></a>' +
+        iosNote + androidNote + otherNote +
+      '</div>' +
+
+      (state.minorSubmitted ?
+        '<div class="vsup-minor-note"><span style="flex:none;margin-top:1px" aria-hidden="true">✉</span><span>We’ll email the <strong style="color:#5C431F">liability waiver &amp; minor permission form</strong> to your parent or guardian. Once it’s signed, you’re all set to start.</span></div>'
+      : '') +
+
+      '<div class="vsup-next-steps">' +
+        '<p style="font-family:\'Fraunces Variable\',Georgia,serif;font-weight:600;font-size:17px;margin-bottom:15px">Here’s what happens next</p>' +
+        '<div class="vsup-step-item"><span class="vsup-step-icon">' + PAW_SVG + '</span><span style="font-size:14.5px;line-height:1.5;color:#494F40"><strong style="color:#23291F">We’ll read what you shared</strong> and find where you’d fit best.</span></div>' +
+        '<div class="vsup-step-item"><span class="vsup-step-icon">' + PAW_SVG + '</span><span style="font-size:14.5px;line-height:1.5;color:#494F40"><strong style="color:#23291F">A volunteer coordinator will reach out</strong> within a few days — keep an eye on your inbox.</span></div>' +
+        '<div class="vsup-step-item"><span class="vsup-step-icon">' + PAW_SVG + '</span><span style="font-size:14.5px;line-height:1.5;color:#494F40"><strong style="color:#23291F">You’ll be onboarded in person at the sanctuary</strong> in Yuma — meet the team and a few of the animals.</span></div>' +
+      '</div>' +
+
+      '<button type="button" class="vsup-reset" id="vsup-reset">Sign up another volunteer</button>' +
+    '</div>';
+  }
+
+  function renderNavButtons() {
+    var step = state.step;
+    if (step > 4) return '';
+    var isLast = step === 4;
+    var backBtn = step > 1 ? '<button type="button" class="vsup-back" id="vsup-back">Back</button>' : '';
+    var nextLabel = isLast ? (state.submitting ? 'Submitting…' : 'Submit application') : 'Continue';
+    return '<div class="vsup-nav">' +
+      backBtn +
+      '<button type="button" class="vsup-next" id="vsup-next"' + (state.submitting ? ' disabled' : '') + '>' + nextLabel + ' <span aria-hidden="true">→</span></button>' +
+    '</div>' +
+    '<p class="vsup-foot-note">Only a name, email &amp; age are required — everything else is up to you.</p>';
+  }
+
+  function render() {
+    var step = state.step;
+    var body = '';
+
+    if (step <= 4) {
+      body += '<div style="margin-top:24px">' +
+        '<h1 style="font-family:\'Fraunces Variable\',Georgia,serif;font-weight:700;font-size:clamp(28px,6.5vw,36px);line-height:1.08;letter-spacing:-.015em">Show up for the animals.</h1>' +
+        '<p style="margin-top:10px;font-size:16px;line-height:1.55;color:#5F6557;max-width:50ch">We’re 100% volunteer-run — no paid staff, just people who choose to show up for the animals in our care. Tell us a little about yourself and we’ll find where you fit. It takes about two minutes; no experience needed.</p>' +
+      '</div>';
+    }
+
+    if (step <= 4) body += renderProgress(step);
+
+    if (step === 1) body += renderStep1();
+    else if (step === 2) body += renderStep2();
+    else if (step === 3) body += renderStep3();
+    else if (step === 4) body += renderStep4();
+    else body += renderThankYou();
+
+    if (step <= 4) body += renderNavButtons();
+
+    document.getElementById('vsup-form-body').innerHTML = body;
+    bindEvents();
+  }
+
+  function bindEvents() {
+    var step = state.step;
+
+    // Step 1 fields
+    var fn = document.getElementById('vs-firstName');
+    if (fn) fn.addEventListener('input', function(e) { state.data.firstName = e.target.value; state.errors.firstName = undefined; });
+    var ln = document.getElementById('vs-lastName');
+    if (ln) ln.addEventListener('input', function(e) { state.data.lastName = e.target.value; });
+    var em = document.getElementById('vs-email');
+    if (em) em.addEventListener('input', function(e) { state.data.email = e.target.value; state.errors.email = undefined; });
+    var ph = document.getElementById('vs-phone');
+    if (ph) ph.addEventListener('input', function(e) { state.data.phone = e.target.value; });
+    var ag = document.getElementById('vs-age');
+    if (ag) ag.addEventListener('change', function(e) { state.data.age = e.target.value; state.errors.age = undefined; render(); });
+    var gn = document.getElementById('vs-guardianName');
+    if (gn) gn.addEventListener('input', function(e) { state.data.guardianName = e.target.value; state.errors.guardianName = undefined; });
+    var gc = document.getElementById('vs-guardianContact');
+    if (gc) gc.addEventListener('input', function(e) { state.data.guardianContact = e.target.value; state.errors.guardianContact = undefined; });
+    var wv = document.getElementById('vs-waiver');
+    if (wv) wv.addEventListener('change', function(e) { state.data.waiverAgreed = e.target.checked; state.errors.waiverAgreed = undefined; render(); });
+
+    // Step 2: interest chips
+    document.querySelectorAll('[data-interest]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var key = btn.getAttribute('data-interest');
+        var arr = state.data.interests;
+        var idx = arr.indexOf(key);
+        if (idx >= 0) arr.splice(idx, 1); else arr.push(key);
+        state.errors.interests = undefined;
+        render();
+      });
+    });
+    // Step 2: transport
+    document.querySelectorAll('[data-transport]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        state.data.transport = btn.getAttribute('data-transport');
+        render();
+      });
+    });
+
+    // Step 3: days
+    document.querySelectorAll('[data-day]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var key = btn.getAttribute('data-day');
+        var arr = state.data.availDays;
+        var idx = arr.indexOf(key);
+        if (idx >= 0) arr.splice(idx, 1); else arr.push(key);
+        render();
+      });
+    });
+    // Step 3: times
+    document.querySelectorAll('[data-time]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var key = btn.getAttribute('data-time');
+        var arr = state.data.availTimes;
+        var idx = arr.indexOf(key);
+        if (idx >= 0) arr.splice(idx, 1); else arr.push(key);
+        render();
+      });
+    });
+    // Step 3: frequency
+    var freq = document.getElementById('vs-frequency');
+    if (freq) freq.addEventListener('change', function(e) { state.data.frequency = e.target.value; });
+
+    // Step 4: experience
+    var exp = document.getElementById('vs-experience');
+    if (exp) exp.addEventListener('change', function(e) { state.data.experienceLevel = e.target.value; render(); });
+    var expD = document.getElementById('vs-expDetail');
+    if (expD) expD.addEventListener('input', function(e) { state.data.experienceDetail = e.target.value; });
+    var ht = document.getElementById('vs-heat');
+    if (ht) ht.addEventListener('change', function(e) { state.data.heat = e.target.value; });
+    document.querySelectorAll('[data-access]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        state.data.accessibility = btn.getAttribute('data-access');
+        render();
+      });
+    });
+    var an = document.getElementById('vs-accessNeeds');
+    if (an) an.addEventListener('input', function(e) { state.data.accessibilityNeeds = e.target.value; });
+    var nt = document.getElementById('vs-notes');
+    if (nt) nt.addEventListener('input', function(e) { state.data.notes = e.target.value; });
+
+    // Nav
+    var nextBtn = document.getElementById('vsup-next');
+    if (nextBtn) nextBtn.addEventListener('click', handleNext);
+    var backBtn = document.getElementById('vsup-back');
+    if (backBtn) backBtn.addEventListener('click', handleBack);
+    var resetBtn = document.getElementById('vsup-reset');
+    if (resetBtn) resetBtn.addEventListener('click', handleReset);
+  }
+
+  function handleNext() {
+    var step = state.step;
+    var errors = validate(step);
+    if (Object.keys(errors).length) {
+      state.errors = errors;
+      render();
+      var firstErr = document.querySelector('.vsup-err');
+      if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (step === 4) {
+      submitForm();
+      return;
+    }
+    state.step = step + 1;
+    state.errors = {};
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleBack() {
+    state.step = Math.max(1, state.step - 1);
+    state.errors = {};
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleReset() {
+    state.step = 1;
+    state.minorSubmitted = false;
+    state.submitting = false;
+    state.errors = {};
+    state.data = {
+      firstName: '', lastName: '', email: '', phone: '', age: '',
+      guardianName: '', guardianContact: '', waiverAgreed: false,
+      interests: [], transport: '',
+      availDays: [], availTimes: [], frequency: '',
+      experienceLevel: '', experienceDetail: '',
+      heat: '', accessibility: '', accessibilityNeeds: '', notes: ''
+    };
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function formatVolunteerMessage(d) {
+    var lines = [
+      'VOLUNTEER APPLICATION',
+      '',
+      'Name: ' + d.firstName + (d.lastName ? ' ' + d.lastName : ''),
+      'Email: ' + d.email,
+      'Phone: ' + (d.phone || '—'),
+      'Age: ' + (d.age === 'adult' ? '18 or older' : 'Under 18'),
+    ];
+    if (d.age === 'minor') {
+      lines.push('Guardian: ' + d.guardianName);
+      lines.push('Guardian contact: ' + d.guardianContact);
+    }
+    lines.push('');
+    lines.push('Interests: ' + (d.interests.length ? d.interests.join(', ') : '—'));
+    if (d.interests.includes('transport')) lines.push('Has vehicle: ' + (d.transport || '—'));
+    lines.push('');
+    lines.push('Available days: ' + (d.availDays.length ? d.availDays.join(', ') : '—'));
+    lines.push('Available times: ' + (d.availTimes.length ? d.availTimes.join(', ') : '—'));
+    lines.push('Frequency: ' + (d.frequency || '—'));
+    if (d.experienceLevel) {
+      lines.push('');
+      lines.push('Experience: ' + d.experienceLevel);
+      if (d.experienceDetail) lines.push('Experience details: ' + d.experienceDetail);
+    }
+    if (d.heat) lines.push('Heat comfort: ' + d.heat);
+    if (d.accessibility) lines.push('Accessibility: ' + d.accessibility + (d.accessibilityNeeds ? ' — ' + d.accessibilityNeeds : ''));
+    if (d.notes) { lines.push(''); lines.push('Notes: ' + d.notes); }
+    return lines.join('\n');
+  }
+
+  function submitForm() {
+    state.submitting = true;
+    render();
+
+    var d = state.data;
+    var payload = {
+      name: d.firstName + (d.lastName ? ' ' + d.lastName : ''),
+      email: d.email.trim(),
+      subject: 'volunteer',
+      message: formatVolunteerMessage(d)
+    };
+
+    fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function() {}).finally(function() {
+      state.step = 5;
+      state.minorSubmitted = d.age === 'minor';
+      state.submitting = false;
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  render();
+})();
+</script>
+<script src="app.js?v=36"></script>
+</body>
+</html>

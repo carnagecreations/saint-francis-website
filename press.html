@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Press &amp; Media | Saint Francis Rescue & Sanctuary</title>
+<meta name="description" content="Press kit, organization facts, and media contact for Saint Francis Rescue and Sanctuary of Yuma.">
+<!-- Analytics (privacy-friendly). Uncomment ONE block when account is ready.
+     Plausible (recommended, cookieless, GDPR-friendly):
+     <script defer data-domain="saintfrancisrescue.org" src="https://plausible.io/js/script.js"></script>
+     — or GA4:
+     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-XXXXXXXXXX')</script>
+     Donate-click events fire automatically via SF.track() in app.js. -->
+<link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-wght-normal.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/hanken-400.woff2" crossorigin>
+<link rel="stylesheet" href="styles.css?v=36">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --coral: #e8532a;
+    --coral-dark: #c93e18;
+    --coral-light: #fde8e2;
+    --coral-pale: #fff5f2;
+    --charcoal: #1a1a1a;
+    --ink: #2c2c2c;
+    --muted: #6b6b6b;
+    --warm-white: #fffdf9;
+    --bone: #f7f3ed;
+    --line: #e8e0d6;
+    --gold: #d4913a;
+    --gold-light: #fef3e2;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,.08);
+    --shadow-lg: 0 12px 48px rgba(0,0,0,.12);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--body);
+    background: var(--warm-white);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+
+  /* ── ANNOUNCE BAR ── */
+  .announce {
+    background: var(--charcoal);
+    color: rgba(255,255,255,.85);
+    text-align: center;
+    font-size: .8rem;
+    padding: .6rem 1rem;
+    letter-spacing: .04em;
+  }
+  .announce a { color: var(--coral); font-weight: 600; text-decoration: none; }
+  .announce a:hover { text-decoration: underline; }
+
+  /* ── NAV ── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255,253,249,.97);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: .9rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .brand-mark {
+    width: 40px; height: 40px;
+    background: var(--coral);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+  .brand-text strong { font-size: .95rem; color: var(--charcoal); font-weight: 700; }
+  .brand-text span { font-size: .75rem; color: var(--muted); font-weight: 400; }
+
+  .nav-links {
+    display: flex;
+    gap: .25rem;
+    align-items: center;
+    margin-left: auto;
+    list-style: none;
+  }
+  .nav-links a {
+    text-decoration: none;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--ink);
+    padding: .45rem .8rem;
+    border-radius: 8px;
+    transition: background .15s, color .15s;
+  }
+  .nav-links a:hover, .nav-links a.active { background: var(--coral-pale); color: var(--coral-dark); }
+  .nav-cta {
+    flex-shrink: 0;
+    margin-left: .5rem;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .7rem 1.5rem;
+    border-radius: 100px;
+    font-family: var(--body);
+    font-size: .9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform .15s, box-shadow .15s, background .15s;
+    cursor: pointer;
+    border: none;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn-coral { background: var(--coral); color: #fff; }
+  .btn-coral:hover { background: var(--coral-dark); }
+  .btn-outline { background: transparent; border: 2px solid var(--coral); color: var(--coral); }
+  .btn-outline:hover { background: var(--coral-pale); }
+  .btn-white { background: #fff; color: var(--coral-dark); }
+  .btn-white:hover { background: var(--bone); }
+  .btn-sm { padding: .5rem 1.1rem; font-size: .82rem; }
+
+  /* ── WRAP ── */
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+  .wrap-narrow { max-width: 760px; margin: 0 auto; padding: 0 2rem; }
+
+  /* ── PAGE HERO ── */
+  .page-hero {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d1a12 60%, #3d200f 100%);
+    color: #fff;
+    padding: clamp(3.5rem, 8vw, 6rem) 0 clamp(3rem, 6vw, 5rem);
+    position: relative;
+    overflow: hidden;
+  }
+  .page-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 70% 50%, rgba(232,83,42,.18) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: rgba(232,83,42,.2);
+    border: 1px solid rgba(232,83,42,.4);
+    color: #e8a07a;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: .35rem .9rem;
+    border-radius: 100px;
+    margin-bottom: 1.25rem;
+  }
+  .page-hero h1 {
+    font-family: var(--display);
+    font-size: clamp(2.8rem, 6vw, 4.5rem);
+    line-height: 1.1;
+    font-weight: 400;
+    margin-bottom: 1.25rem;
+    max-width: 20ch;
+  }
+  .page-hero h1 em { color: #e8a07a; font-style: italic; }
+  .page-hero .lead {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,.72);
+    max-width: 52ch;
+    line-height: 1.75;
+  }
+  .crumb {
+    font-size: .8rem;
+    color: rgba(255,255,255,.5);
+    margin-bottom: 1.5rem;
+  }
+  .crumb a { color: rgba(255,255,255,.65); text-decoration: none; }
+  .crumb a:hover { color: #fff; }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    background: var(--coral);
+    overflow: hidden;
+  }
+  .stat-cell {
+    padding: 2.5rem 2rem;
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    transition: background .2s;
+  }
+  .stat-cell:last-child { border-right: 0; }
+  .stat-cell:hover { background: var(--coral-dark); }
+  .stat-num {
+    font-family: var(--display);
+    font-size: clamp(2.2rem, 4vw, 3rem);
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: .4rem;
+  }
+  .stat-label {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    opacity: .85;
+  }
+
+  /* ── SECTION ── */
+  .section { padding: clamp(4rem, 8vw, 7rem) 0; }
+  .section-sm { padding: clamp(2.5rem, 5vw, 4rem) 0; }
+  .bg-bone { background: var(--bone); }
+  .bg-white { background: #fff; }
+  .bg-dark { background: var(--charcoal); }
+
+  .section-label {
+    display: inline-block;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--coral);
+    margin-bottom: .75rem;
+  }
+  h2.section-title {
+    font-family: var(--display);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 400;
+    color: var(--charcoal);
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+  .section-intro {
+    font-size: 1.05rem;
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 62ch;
+  }
+
+  /* ── WHO WE ARE ── */
+  .who-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+  }
+  .who-text p {
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: var(--ink);
+    margin-bottom: 1.25rem;
+  }
+  .who-text p:last-child { margin-bottom: 0; }
+  .who-callout {
+    background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+    border-radius: var(--radius);
+    padding: 3rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .who-callout::before {
+    content: '"';
+    position: absolute;
+    top: -1rem;
+    left: 1.5rem;
+    font-family: var(--display);
+    font-size: 10rem;
+    color: rgba(255,255,255,.1);
+    line-height: 1;
+  }
+  .who-callout blockquote {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    font-style: italic;
+    line-height: 1.5;
+    position: relative;
+  }
+  .who-callout cite {
+    display: block;
+    margin-top: 1.25rem;
+    font-size: .85rem;
+    font-style: normal;
+    font-weight: 600;
+    opacity: .8;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  /* ── STORY ANGLES ── */
+  .angles-list { display: flex; flex-direction: column; gap: 1.25rem; }
+  .angle-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 2rem 2.25rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 1.75rem;
+    align-items: start;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .angle-card:hover { transform: translateX(6px); box-shadow: var(--shadow-lg); }
+  .angle-num {
+    font-family: var(--display);
+    font-size: 3rem;
+    font-weight: 400;
+    color: var(--coral-light);
+    line-height: 1;
+    padding-top: .15rem;
+    min-width: 3rem;
+    text-align: center;
+  }
+  .angle-body h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin-bottom: .5rem;
+  }
+  .angle-body p {
+    font-size: .95rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: .85rem;
+  }
+  .angle-hook {
+    font-style: italic;
+    font-size: .9rem;
+    color: var(--coral-dark);
+    font-weight: 500;
+    border-left: 3px solid var(--coral);
+    padding-left: .85rem;
+  }
+
+  /* ── RESOURCES GRID ── */
+  .resources-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+  .resource-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 2rem;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .resource-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .resource-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: var(--coral-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 1.25rem;
+  }
+  .resource-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin-bottom: .6rem;
+  }
+  .resource-card p {
+    font-size: .9rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .resource-card a { color: var(--coral); font-weight: 600; text-decoration: underline; }
+
+  /* ── CONTACT CTA ── */
+  .contact-cta {
+    background: var(--charcoal);
+    border-radius: var(--radius);
+    padding: 4rem;
+    text-align: center;
+    margin-top: 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .contact-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 100%, rgba(232,83,42,.25) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .contact-cta h3 {
+    font-family: var(--display);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    color: #fff;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+  .contact-cta p {
+    color: rgba(255,255,255,.65);
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 48ch;
+    margin: 0 auto 2rem;
+    position: relative;
+  }
+  .contact-cta .btn { position: relative; }
+
+  /* ── BOILERPLATE CARD ── */
+  .boilerplate {
+    background: var(--gold-light);
+    border: 1px solid rgba(212,145,58,.25);
+    border-radius: var(--radius);
+    padding: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .boilerplate .bplate-label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: .75rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .boilerplate p {
+    font-size: .95rem;
+    line-height: 1.8;
+    color: var(--ink);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--charcoal);
+    color: rgba(255,255,255,.7);
+    padding: 5rem 0 2rem;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 4rem;
+  }
+  .footer-brand { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+  .footer-brand .mark { width:36px;height:36px;background:var(--coral);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0; }
+  .footer-brand strong { color: #fff; font-size: .95rem; }
+  .footer-tagline { font-size: .875rem; line-height: 1.75; max-width: 30ch; margin-bottom: 1.5rem; }
+  .social-row { display: flex; gap: .75rem; }
+  .social-btn {
+    width:36px;height:36px;border-radius:50%;
+    background:rgba(255,255,255,.08);
+    display:flex;align-items:center;justify-content:center;
+    font-size:.9rem;
+    text-decoration:none;
+    transition: background .15s;
+  }
+  .social-btn:hover { background: var(--coral); }
+  .footer h4 { color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem; }
+  .footer-links { display:flex;flex-direction:column;gap:.5rem; }
+  .footer-links a { font-size:.875rem;text-decoration:none;color:rgba(255,255,255,.6);transition:color .15s; }
+  .footer-links a:hover { color:#fff; }
+  .footer-address p { font-size:.875rem;line-height:1.75; }
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,.1);
+    padding-top: 2rem;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;
+    font-size:.8rem;
+  }
+  .footer-bottom a { color:rgba(255,255,255,.5);text-decoration:none; }
+  .footer-bottom a:hover { color:#fff; }
+  .footer-legal { display:flex;gap:1.5rem; }
+
+  /* ── FADE IN ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade { animation: fadeUp .5s ease both; }
+  .fade-1 { animation-delay: .1s; }
+  .fade-2 { animation-delay: .2s; }
+  .fade-3 { animation-delay: .3s; }
+  .fade-4 { animation-delay: .4s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .stat-cell:nth-child(2) { border-right: 0; }
+    .stat-cell:nth-child(1), .stat-cell:nth-child(2) { border-bottom: 1px solid rgba(255,255,255,.2); }
+    .who-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .resources-grid { grid-template-columns: 1fr 1fr; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .nav-links.open {
+      display: flex;
+      flex-direction: column;
+      gap: .2rem;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--warm-white);
+      border-bottom: 1px solid var(--line);
+      padding: 1rem 1.5rem;
+      box-shadow: var(--shadow);
+      z-index: 50;
+    }
+    .nav-links.open a {
+      padding: .8rem .6rem;
+      font-size: 1rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .nav-links.open a:last-child { border-bottom: none; }
+    .nav-toggle {
+      display: flex;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+    .nav-toggle svg { width: 24px; height: 24px; stroke: var(--ink); }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .resources-grid { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr; }
+    .contact-cta { padding: 2.5rem 1.5rem; }
+    .angle-card { grid-template-columns: 1fr; }
+    .angle-num { font-size: 2rem; }
+  }
+
+  /* dropdown handled by styles.css */
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Saint Francis">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://saintfrancisrescue.org/"},{"@type":"ListItem","position":2,"name":"Our Story","item":"https://saintfrancisrescue.org/about"},{"@type":"ListItem","position":3,"name":"Press & Media"}]}</script>
+</head>
+<body data-page="press">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Announce Bar -->
+<div class="announce">100% volunteer-run · Every dollar goes straight to the animals · <a href="donate.html">Donate →</a></div>
+
+<!-- Nav -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html" aria-label="Saint Francis Rescue and Sanctuary home">
+      <img loading="lazy" src="images/logo.webp" alt="Saint Francis Rescue logo" width="42" height="42" style="object-fit:contain">
+      <span class="brand-text"><strong>Saint Francis</strong><span>Rescue &amp; Sanctuary</span></span>
+    </a>
+    <nav class="nav-links" id="primary-nav" aria-label="Primary">
+      <a href="index.html" data-nav="home">Home</a>
+      <a href="animals.html" data-nav="animals">Our Animals</a>
+      <a href="volunteer.html" data-nav="volunteer">Volunteer</a>
+      <a href="fundraiser.html" data-nav="fundraiser">Auction &amp; Fundraiser</a>
+      <div class="nav-dropdown-wrapper">
+        <a href="about.html" data-nav="about" class="nav-dropdown-toggle">Our Story <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-left:4px"><path d="M6 9l6 6 6-6"/></svg></a>
+        <div class="nav-dropdown-menu">
+          <a href="ways-to-help.html">Ways to Help</a>
+          <a href="corporate.html">Corporate Giving</a>
+          <a href="press.html">Press &amp; Media</a>
+          <a href="faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="contact.html" data-nav="contact">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-gold btn-sm" href="donate.html">Donate</a>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<!-- Page Hero -->
+<section class="page-hero">
+  <div class="wrap">
+    <div class="crumb fade"><a href="index.html">Home</a> / Press &amp; Media</div>
+    <div class="hero-chip fade fade-1">📰 Press &amp; Media</div>
+    <h1 class="fade fade-2">The story behind <em>the sanctuary</em></h1>
+    <p class="lead fade fade-3">Since 2010. One family. Zero paid staff. Now a registered nonprofit taking in the animals nobody else will keep. We work with journalists, bloggers, and media outlets to tell the true story of rescue in rural Arizona.</p>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats-row" role="region" aria-label="Key facts">
+  <div class="stat-cell">
+    <div class="stat-num">~2010</div>
+    <div class="stat-label">Founded</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num">501(c)(3)</div>
+    <div class="stat-label">Status</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num">~300</div>
+    <div class="stat-label">Animals Helped</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num">Zero</div>
+    <div class="stat-label">Paid Staff</div>
+  </div>
+</div>
+
+<!-- Who We Are -->
+<section class="section bg-white">
+  <div class="wrap">
+    <div class="who-grid">
+      <div class="who-text">
+        <span class="section-label">About the Rescue</span>
+        <h2 class="section-title">Who We Are</h2>
+        <p>Saint Francis started quietly—a family in Yuma making a choice that would last over twelve years. Dogs nobody wanted. Cats the shelters had no room for. Horses that cost too much to keep alive. Old animals. Broken animals. The animals that fell through every other safety net. They built a farm sanctuary and said yes when the answer was supposed to be no.</p>
+        <p>In 2024, they couldn't do it alone anymore. The costs were unsustainable. So they filed for 501(c)(3) status—made it official, made it public, made it a mission anyone could join. Today there are still zero paid staff. No office. Every dollar given goes straight to feed, veterinary care, and the upkeep of a sanctuary that operates entirely on volunteers and community support. They're still saying yes to the animals everyone else has given up on.</p>
+        <div style="margin-top:2rem; display:flex; gap:1rem; flex-wrap:wrap;">
+          <a class="btn btn-coral" href="contact.html">Get in Touch</a>
+          <a class="btn btn-outline" href="about.html">Our Story</a>
+        </div>
+      </div>
+      <div class="who-callout">
+        <blockquote>When the shelter says no. When the costs are impossible. When the animal is old, or sick, or broken beyond what the system can handle. We don't turn them away. We don't have an ending date. We say yes.</blockquote>
+        <cite>— What drives Saint Francis to keep showing up</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Story Angles -->
+<section class="section bg-bone">
+  <div class="wrap">
+    <div style="text-align:center; margin-bottom:3rem;">
+      <span class="section-label">Story Angles</span>
+      <h2 class="section-title">Stories Worth Telling</h2>
+      <p class="section-intro" style="margin: 0 auto;">We live these narratives every day. Pick one. Come visit. Let us show you.</p>
+    </div>
+    <div class="angles-list">
+      <div class="angle-card">
+        <div class="angle-num">01</div>
+        <div class="angle-body">
+          <h3>The rescue nobody gets paid for</h3>
+          <p>Since 2010. Hundreds of animals. Zero salaries. A Yuma farm sanctuary runs entirely on volunteers, donations, and the stubborn refusal to let an animal die because there's no money left.</p>
+          <span class="angle-hook">How do you scale compassion when there's no paycheck?</span>
+        </div>
+      </div>
+      <div class="angle-card">
+        <div class="angle-num">02</div>
+        <div class="angle-body">
+          <h3>From pocket change to 501(c)(3)</h3>
+          <p>A family kept animals alive out of their own bank account for twelve years. In 2024, they made it official—registered with the IRS so they could stop burning through their savings and start building something permanent.</p>
+          <span class="angle-hook">The evolution from family secret to public mission.</span>
+        </div>
+      </div>
+      <div class="angle-card">
+        <div class="angle-num">03</div>
+        <div class="angle-body">
+          <h3>The last stop before the end</h3>
+          <p>Old. Sick. Terminally injured. Hard to place. These are the animals shelters have to turn away. At Saint Francis, they become permanent residents—not on death row, but on the path home.</p>
+          <span class="angle-hook">What happens to the animals when the system says no.</span>
+        </div>
+      </div>
+      <div class="angle-card">
+        <div class="angle-num">04</div>
+        <div class="angle-body">
+          <h3>Built with hands, not blueprints</h3>
+          <p>Saint Francis operates in the desert with farm buildings and volunteer labor. A real facility—shelter from the Arizona heat, professional medical space, proper enclosures—would transform how many animals they can save.</p>
+          <span class="angle-hook">Why infrastructure is the next frontier for animal rescue.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Media Assets -->
+<section class="section bg-white">
+  <div class="wrap">
+    <div style="text-align:center; margin-bottom:.5rem;">
+      <span class="section-label">Media Assets</span>
+      <h2 class="section-title">What You Need to Tell This Story</h2>
+    </div>
+
+    <div class="boilerplate">
+      <div class="bplate-label">📋 Boilerplate Text — ready to copy</div>
+      <p>Saint Francis Rescue and Sanctuary of Yuma is a 100% volunteer-run, 501(c)(3) nonprofit farm animal rescue founded in 2010. Located in Yuma, Arizona, it provides permanent sanctuary to dogs, cats, horses, and other animals that shelters cannot keep—the old, the sick, the injured, the hard-to-place. EIN: 99-0599742.</p>
+    </div>
+
+    <div class="resources-grid">
+      <div class="resource-card">
+        <div class="resource-icon">🎨</div>
+        <h3>Logo &amp; Photos</h3>
+        <p><a href="images/logo.webp" target="_blank" rel="noopener">Download the logo</a> for editorial use. Don't alter it or imply endorsement. For high-res photos of the animals, facility, and team, <a href="contact.html">reach out</a>—we'll connect you with what you need.</p>
+      </div>
+      <div class="resource-card">
+        <div class="resource-icon">📞</div>
+        <h3>On Deadline?</h3>
+        <p>Use our <a href="contact.html">contact form</a> (fastest) or <a href="https://www.facebook.com/profile.php?id=61585411116127" target="_blank" rel="noopener">message us on Facebook</a>. Small team, big commitment—we'll prioritize getting you what you need. Mention if you're on deadline.</p>
+      </div>
+      <div class="resource-card">
+        <div class="resource-icon">🏛️</div>
+        <h3>The Official Facts</h3>
+        <p><strong>Legal Name:</strong> Saint Francis Rescue and Sanctuary of Yuma<br><strong>EIN:</strong> 99-0599742<br><strong>Status:</strong> 501(c)(3) Nonprofit<br><strong>Founded:</strong> ~2010 (registered nonprofit in 2024)</p>
+      </div>
+    </div>
+
+    <div class="contact-cta">
+      <h3>Want to visit? Want an interview? Want the full story?</h3>
+      <p>We're a small volunteer team running a 24/7 operation. We read every message and we'll get back to you. For urgent deadlines, say so upfront—it helps us prioritize.</p>
+      <a class="btn btn-coral" href="contact.html">Reach Out</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<section class="pre-footer-strip">
+  <div class="wrap">
+    <div class="pfs-inner">
+      <div class="pfs-text">
+        <strong>Stay close to the animals.</strong>
+        <span>Get occasional updates on rescues, residents, and ways to help.</span>
+      </div>
+      <div>
+        <div class="pfs-form" id="pfs-form">
+          <input type="email" placeholder="your@email.com" aria-label="Email address" id="pfs-email" autocomplete="email">
+          <button class="btn btn-clay btn-sm" type="button" id="pfs-submit">Keep me posted</button>
+        </div>
+        <p class="pfs-note">No spam. Unsubscribe anytime. We won&rsquo;t share your info.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <img loading="lazy" src="images/logo.webp" alt="" width="44" height="44" style="object-fit:contain">
+          <strong>Saint Francis Rescue &amp; Sanctuary</strong>
+        </div>
+        <p class="footer-tagline">We say yes when shelters say no. We keep them when it would be easier to let go. A volunteer-run farm sanctuary in Yuma, Arizona.</p>
+        <div class="social-row">
+          <a href="https://www.facebook.com/profile.php?id=61585411116127" target="_blank" rel="noopener" aria-label="Facebook" class="social-btn">f</a>
+          <a href="https://www.instagram.com/saintfrancisrescueandsanctuary" target="_blank" rel="noopener" aria-label="Instagram" class="social-btn">ig</a>
+        </div>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <div class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="animals.html">Our Animals</a>
+          <a href="volunteer.html">Volunteer</a>
+          <a href="fundraiser.html">Fundraiser</a>
+          <a href="about.html">Our Story</a>
+          <a href="contact.html">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4>Support</h4>
+        <div class="footer-links">
+          <a href="donate.html">Donate</a>
+          <a href="ways-to-help.html">Ways to Help</a>
+          <a href="fundraiser.html">Fundraiser Auction</a>
+          <a href="volunteer.html">Become a Volunteer</a>
+          <a href="corporate.html">Corporate Giving</a>
+          <a href="faq.html">FAQ</a>
+          <a href="press.html">Press &amp; Media</a>
+        </div>
+      </div>
+      <div class="footer-address">
+        <h4>Find Us</h4>
+        <p>Saint Francis Rescue and Sanctuary of Yuma</p>
+        <p>PO Box 25413</p>
+        <p>Yuma, AZ 85367</p>
+        <p style="margin-top:.5rem">EIN: 99-0599742</p>
+        <a href="contact.html" class="btn btn-outline btn-sm" style="margin-top:1rem; color:rgba(255,255,255,.7); border-color:rgba(255,255,255,.25);">Send a message</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span id="yr"></span> Saint Francis Rescue and Sanctuary of Yuma. All rights reserved.</span>
+      <nav class="footer-legal">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="accessibility.html">Accessibility</a>
+        <a href="press.html">Press</a>
+      </nav>
+    </div>
+    <div style="padding-top:1rem; font-size:.75rem; opacity:.45; text-align:center;">
+      Registered 501(c)(3) Non-Profit · Donations are tax-deductible · Designed by Venom Vision Designs
+    </div>
+  </div>
+</footer>
+
+<!-- Back to top: handled by the standard .back-top button + app.js -->
+
+<script>
+  // Year
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // Back to top handled by app.js (.back-top)
+
+  // Intersection observer for reveal
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'translateY(0)';
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.angle-card, .resource-card').forEach(function(el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity .45s ease, transform .45s ease';
+      io.observe(el);
+    });
+  }
+</script>
+<a class="back-top" href="#top" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:22px;height:22px" aria-hidden="true"><ellipse cx="7.2" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="12" cy="7.6" rx="1.8" ry="2.5"/><ellipse cx="16.8" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="4.6" cy="14" rx="1.5" ry="2"/><ellipse cx="19.4" cy="14" rx="1.5" ry="2"/><path d="M12 12.4c-2.6 0-4.8 1.9-5.3 4.1-.3 1.4.8 2.6 2.2 2.6.9 0 1.7-.4 3.1-.4s2.2.4 3.1.4c1.4 0 2.5-1.2 2.2-2.6-.5-2.2-2.7-4.1-5.3-4.1Z"/></svg>
+</a>
+<script src="app.js?v=36"></script>
+</body>
+</html>
