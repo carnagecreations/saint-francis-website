@@ -10,3 +10,13 @@ compatibility_date = "2024-10-01"
 [[env.production.r2_buckets]]
 binding = "MEDIA"
 bucket_name = "sfr-rescue-media"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "b8c159994e0f4cdfb6aeb679243cb861"
+
+# Duplicated at top level: Pages' local dev server (`wrangler pages dev`)
+# only reads top-level bindings, not env.production-scoped ones.
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "b8c159994e0f4cdfb6aeb679243cb861"

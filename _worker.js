@@ -14669,6 +14669,17 @@ function serializeAuctionItem(i) {
     createdAt: i.createdAt.toISOString()
   };
 }
+async function rateLimit(c, key, limit, windowSeconds) {
+  const kv = c.env.RATE_LIMIT;
+  if (!kv) return true;
+  const ip = c.req.header("CF-Connecting-IP") || "unknown";
+  const bucketKey = `${key}:${ip}`;
+  const raw2 = await kv.get(bucketKey);
+  const count = raw2 ? parseInt(raw2, 10) : 0;
+  if (count >= limit) return false;
+  await kv.put(bucketKey, String(count + 1), { expirationTtl: windowSeconds });
+  return true;
+}
 var app = new Hono2().basePath("/api");
 app.use("*", cors());
 app.get("/healthz", (c) => c.json({ status: "ok" }));
@@ -14702,6 +14713,9 @@ app.get("/animals", async (c) => {
   return c.json(animals.map(serializeAnimal));
 });
 app.post("/contact", async (c) => {
+  if (!await rateLimit(c, "contact", 5, 600)) {
+    return c.json({ error: "Too many requests. Please try again in a few minutes." }, 429);
+  }
   const body = await c.req.json().catch(() => null);
   if (!body || !body.name || !body.email || !body.subject || !body.message) {
     return c.json({ error: "Invalid contact form data" }, 400);
@@ -14729,6 +14743,9 @@ app.post("/contact", async (c) => {
 });
 
 app.post("/newsletter", async (c) => {
+  if (!await rateLimit(c, "newsletter", 5, 600)) {
+    return c.json({ error: "Too many requests. Please try again in a few minutes." }, 429);
+  }
   const body = await c.req.json().catch(() => null);
   const email = String(body?.email || "").trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
@@ -14904,6 +14921,9 @@ app.delete("/contacts/:id", async (c) => {
 });
 
 app.post("/suggestions", async (c) => {
+  if (!await rateLimit(c, "suggestions", 10, 600)) {
+    return c.json({ error: "Too many requests. Please try again in a few minutes." }, 429);
+  }
   const body = await c.req.json().catch(() => null);
   if (!body || !body.name || !body.emoji) {
     return c.json({ error: "Invalid suggestion data" }, 400);
@@ -14937,6 +14957,9 @@ app.get("/suggestions", async (c) => {
 });
 
 app.patch("/suggestions/:id/vote", async (c) => {
+  if (!await rateLimit(c, "suggestions-vote", 20, 600)) {
+    return c.json({ error: "Too many requests. Please try again in a few minutes." }, 429);
+  }
   const id = Number(c.req.param("id"));
   if (isNaN(id)) return c.json({ error: "Invalid suggestion ID" }, 400);
   const body = await c.req.json().catch(() => null);
@@ -15032,6 +15055,9 @@ function requireAdmin(env, authHeader) {
   return authHeader.slice(7) === env.ADMIN_TOKEN;
 }
 app.post("/admin/login", async (c) => {
+  if (!await rateLimit(c, "admin-login", 5, 900)) {
+    return c.json({ error: "Too many attempts. Please try again in 15 minutes." }, 429);
+  }
   const body = await c.req.json().catch(() => null);
   if (!body?.password) return c.json({ error: "Invalid request" }, 400);
   if (body.password !== c.env.ADMIN_TOKEN) {
