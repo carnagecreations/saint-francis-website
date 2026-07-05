@@ -14552,6 +14552,19 @@ var contactSubjectEnum = pgEnum("contact_subject", [
   "newsletter",
   "general"
 ]);
+// Only meaningful for adopt/foster/volunteer submissions — other subjects
+// (donate, newsletter, general) stay at the "new" default and ignore it.
+// "declined" always requires a declineReason; nothing ever gets deleted to
+// express a decision — see the /contacts/:id PATCH handler below.
+var applicationStatusEnum = pgEnum("application_status", [
+  "new",
+  "reviewing",
+  "interview",
+  "home_check",
+  "approved",
+  "completed",
+  "declined"
+]);
 var animalsTable = pgTable("animals", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -14565,7 +14578,20 @@ var animalsTable = pgTable("animals", {
   imageUrls: jsonb("image_urls").$type(),
   needsFoster: boolean("needs_foster").notNull().default(false),
   isFeatured: boolean("is_featured").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow()
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  // Set the first time status transitions to "adopted" (see PATCH /admin/animals/:id)
+  // so /stats can report adoptions-this-year by actual outcome date, not record age.
+  adoptedAt: timestamp("adopted_at")
+});
+// Founded 2012 (confirmed) — years active is always CURRENT_YEAR - this,
+// never a stored number that goes stale. Only figures with no queryable
+// source of truth (volunteer count) live in the site_stats table below, so
+// an admin can correct them via the API without a code deploy.
+var FOUNDED_YEAR = 2012;
+var siteStatsTable = pgTable("site_stats", {
+  id: integer("id").primaryKey(),
+  volunteers: integer("volunteers").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
 });
 var contactsTable = pgTable("contacts", {
   id: serial("id").primaryKey(),
@@ -14573,6 +14599,12 @@ var contactsTable = pgTable("contacts", {
   email: text("email").notNull(),
   subject: contactSubjectEnum("subject").notNull(),
   message: text("message").notNull(),
+  // Full structured payload from application forms (adopt/foster/volunteer) —
+  // phone, address, screening answers. The flat columns above only keep the
+  // human-readable summary; this keeps everything the applicant actually typed.
+  details: jsonb("details").$type(),
+  status: applicationStatusEnum("status").notNull().default("new"),
+  declineReason: text("decline_reason"),
   reply: text("reply"),
   repliedAt: timestamp("replied_at"),
   archived: boolean("archived").default(false),
@@ -14604,6 +14636,23 @@ var newsletterTable = pgTable("newsletter_subscribers", {
   email: text("email").notNull(),
   source: text("source"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+});
+// Zeffy's webhook payload schema isn't publicly documented, so every field
+// below except `raw` is a best-effort extraction that may be wrong or absent
+// — `raw` always keeps the untouched payload so no donation data is ever
+// lost even if the field-mapping guesses need correcting later.
+var donationsTable = pgTable("donations", {
+  id: serial("id").primaryKey(),
+  source: text("source").notNull().default("zeffy"),
+  eventType: text("event_type"),
+  amountCents: integer("amount_cents"),
+  currency: text("currency"),
+  frequency: text("frequency"),
+  donorName: text("donor_name"),
+  donorEmail: text("donor_email"),
+  campaign: text("campaign"),
+  raw: jsonb("raw").$type(),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow()
 });
 function getDb(env) {
   const client = Xs(env.NEON_DATABASE_URL);
@@ -14658,11 +14707,17 @@ app.post("/contact", async (c) => {
     return c.json({ error: "Invalid contact form data" }, 400);
   }
   const db = getDb(c.env);
+  let details = null;
+  if (body.details && typeof body.details === "object" && !Array.isArray(body.details)) {
+    const json = JSON.stringify(body.details);
+    if (json.length <= 32768) details = body.details;
+  }
   const [contact] = await db.insert(contactsTable).values({
     name: String(body.name),
     email: String(body.email),
     subject: body.subject,
-    message: String(body.message)
+    message: String(body.message),
+    details
   }).returning({ id: contactsTable.id });
   return c.json(
     {
@@ -14686,6 +14741,80 @@ app.post("/newsletter", async (c) => {
   }).onConflictDoNothing();
   return c.json({ ok: true, message: "You're on the list!" }, 201);
 });
+
+function pickString(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return null;
+}
+function pickAmountCents(obj) {
+  // Zeffy may send a whole-dollar amount or already-in-cents value under
+  // several possible key names — try the common ones without assuming which.
+  const centsKeys = ["amountCents", "amount_cents", "totalAmountCents"];
+  for (const k of centsKeys) {
+    const v = obj?.[k];
+    if (typeof v === "number" && Number.isFinite(v)) return Math.round(v);
+  }
+  const dollarKeys = ["amount", "total", "totalAmount", "donationAmount"];
+  for (const k of dollarKeys) {
+    const v = obj?.[k];
+    if (typeof v === "number" && Number.isFinite(v)) return Math.round(v * 100);
+  }
+  return null;
+}
+
+// Zeffy has no documented webhook signature header (Settings > Integrations
+// lets you configure a plain URL), so the shared secret below — appended as
+// ?key=... on the URL entered into Zeffy's dashboard — is the only guard
+// against strangers POSTing fake donations here.
+app.post("/webhooks/zeffy", async (c) => {
+  const secret = c.env.ZEFFY_WEBHOOK_SECRET;
+  if (secret && c.req.query("key") !== secret) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const raw = await c.req.json().catch(() => null);
+  if (!raw || typeof raw !== "object") {
+    return c.json({ error: "Invalid payload" }, 400);
+  }
+  const payment = raw.payment || raw.data || raw;
+  const db = getDb(c.env);
+  const [row] = await db.insert(donationsTable).values({
+    source: "zeffy",
+    eventType: pickString(raw, ["event", "type", "eventType"]) || "unknown",
+    amountCents: pickAmountCents(payment),
+    currency: pickString(payment, ["currency"]) || "USD",
+    frequency: pickString(payment, ["frequency", "recurrence", "interval"]),
+    donorName: pickString(payment, ["donorName", "name", "payerName", "fullName"]),
+    donorEmail: pickString(payment, ["donorEmail", "email", "payerEmail"]),
+    campaign: pickString(payment, ["formTitle", "campaignName", "formName", "campaign"]),
+    raw
+  }).returning({ id: donationsTable.id });
+  return c.json({ ok: true, id: row.id }, 201);
+});
+
+app.get("/donations", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const db = getDb(c.env);
+  const rows = await db.select().from(donationsTable).orderBy(sql`${donationsTable.receivedAt} DESC`).limit(500);
+  return c.json(rows.map((d) => ({
+    id: d.id,
+    source: d.source,
+    eventType: d.eventType,
+    amountCents: d.amountCents,
+    currency: d.currency,
+    frequency: d.frequency,
+    donorName: d.donorName,
+    donorEmail: d.donorEmail,
+    campaign: d.campaign,
+    raw: d.raw,
+    receivedAt: d.receivedAt.toISOString()
+  })));
+});
+
 app.get("/newsletter", async (c) => {
   if (!requireAdmin(c.env, c.req.header("Authorization"))) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -14715,12 +14844,17 @@ app.get("/contacts", async (c) => {
     email: contact.email,
     subject: contact.subject,
     message: contact.message,
+    details: contact.details,
+    status: contact.status,
+    declineReason: contact.declineReason,
     reply: contact.reply,
     repliedAt: contact.repliedAt?.toISOString(),
     archived: contact.archived,
     createdAt: contact.createdAt.toISOString()
   })));
 });
+
+var APPLICATION_STATUSES = ["new", "reviewing", "interview", "home_check", "approved", "completed", "declined"];
 
 app.patch("/contacts/:id", async (c) => {
   const auth = c.req.header("Authorization");
@@ -14738,6 +14872,18 @@ app.patch("/contacts/:id", async (c) => {
   if (body.reply !== undefined) updates.reply = body.reply;
   if (body.archived !== undefined) updates.archived = body.archived;
   if (body.reply !== undefined) updates.repliedAt = new Date();
+  if (body.status !== undefined) {
+    if (!APPLICATION_STATUSES.includes(body.status)) {
+      return c.json({ error: "Invalid status" }, 400);
+    }
+    // Denying an applicant is a status change, never a delete — the record,
+    // and the reason, stay on file.
+    if (body.status === "declined" && !String(body.declineReason || "").trim()) {
+      return c.json({ error: "declineReason is required when declining" }, 400);
+    }
+    updates.status = body.status;
+    updates.declineReason = body.status === "declined" ? String(body.declineReason).trim() : null;
+  }
   const contact = await db.update(contactsTable).set(updates).where(eq(contactsTable.id, id)).returning();
   return c.json(contact[0] || { error: "Contact not found" }, contact[0] ? 200 : 404);
 });
@@ -14819,16 +14965,48 @@ app.patch("/suggestions/:id/vote", async (c) => {
 app.get("/stats", async (c) => {
   const db = getDb(c.env);
   const [currentCount] = await db.select({ count: sql`count(*)::int` }).from(animalsTable).where(eq(animalsTable.status, "available"));
+  const [totalRescued] = await db.select({ count: sql`count(*)::int` }).from(animalsTable);
+  // Prefer the real adoption date; fall back to record-creation date only for
+  // animals adopted before the adoptedAt column existed.
   const [adoptedThisYear] = await db.select({ count: sql`count(*)::int` }).from(animalsTable).where(
-    sql`${animalsTable.status} = 'adopted' AND EXTRACT(YEAR FROM ${animalsTable.createdAt}) = EXTRACT(YEAR FROM NOW())`
+    sql`${animalsTable.status} = 'adopted' AND EXTRACT(YEAR FROM COALESCE(${animalsTable.adoptedAt}, ${animalsTable.createdAt})) = EXTRACT(YEAR FROM NOW())`
   );
+  const [config] = await db.select().from(siteStatsTable).where(eq(siteStatsTable.id, 1));
   return c.json({
-    yearsActive: 14,
-    animalsRescued: 300,
+    yearsActive: (new Date()).getFullYear() - FOUNDED_YEAR,
+    animalsRescued: totalRescued?.count ?? 0,
     currentAnimals: currentCount?.count ?? 0,
-    volunteers: 22,
+    volunteers: config?.volunteers ?? null,
     animalsAdoptedThisYear: adoptedThisYear?.count ?? 0
   });
+});
+
+app.get("/admin/site-stats", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const db = getDb(c.env);
+  const [config] = await db.select().from(siteStatsTable).where(eq(siteStatsTable.id, 1));
+  return c.json(config || { error: "Not configured" }, config ? 200 : 404);
+});
+
+app.patch("/admin/site-stats", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json().catch(() => ({}));
+  if (body.yearsActive !== undefined) {
+    return c.json({ error: "yearsActive is computed from the founding year and can't be set directly" }, 400);
+  }
+  const updates = { updatedAt: new Date() };
+  if (body.volunteers !== undefined) {
+    const n = Number(body.volunteers);
+    if (!Number.isFinite(n) || n < 0) return c.json({ error: "volunteers must be a non-negative number" }, 400);
+    updates.volunteers = Math.round(n);
+  }
+  const db = getDb(c.env);
+  const [config] = await db.update(siteStatsTable).set(updates).where(eq(siteStatsTable.id, 1)).returning();
+  return c.json(config || { error: "Not configured" }, config ? 200 : 404);
 });
 app.get("/fundraiser/items/:id", async (c) => {
   const id = Number(c.req.param("id"));
@@ -14978,19 +15156,31 @@ app.patch("/admin/animals/:id", async (c) => {
     return c.json({ error: "Invalid status" }, 400);
   }
   const db = getDb(c.env);
-  const [animal] = await db.update(animalsTable).set({
+  const [existing] = await db.select({ status: animalsTable.status }).from(animalsTable).where(eq(animalsTable.id, id));
+  if (!existing) return c.json({ error: "Animal not found" }, 404);
+  const newStatus = body.status ?? "available";
+  const updateData = {
     name: String(body.name),
     species: String(body.species || "Unspecified"),
     breed: body.breed ? String(body.breed) : null,
     age: body.age ? String(body.age) : null,
     sex: body.sex ? String(body.sex) : null,
-    status: body.status ?? "available",
+    status: newStatus,
     description: String(body.description || "No description provided"),
     imageUrl: imageUrls[0],
     imageUrls,
     needsFoster: Boolean(body.needsFoster),
     isFeatured: Boolean(body.isFeatured)
-  }).where(eq(animalsTable.id, id)).returning();
+  };
+  // Stamp the real adoption date on the transition into "adopted" — never
+  // overwritten on later edits while it stays adopted; cleared if the animal
+  // is relisted, since a fresh adoption later should get a fresh date.
+  if (newStatus === "adopted" && existing.status !== "adopted") {
+    updateData.adoptedAt = new Date();
+  } else if (newStatus !== "adopted") {
+    updateData.adoptedAt = null;
+  }
+  const [animal] = await db.update(animalsTable).set(updateData).where(eq(animalsTable.id, id)).returning();
   if (!animal) return c.json({ error: "Animal not found" }, 404);
   return c.json(serializeAnimal(animal));
 });
@@ -15069,7 +15259,250 @@ app.delete("/admin/auction-items/:id", async (c) => {
   if (!deleted) return c.json({ error: "Auction item not found" }, 404);
   return c.json({ id: deleted.id, message: "Auction item deleted successfully" });
 });
+function slugify(s) {
+  return String(s || "").toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "animal";
+}
+
+var SITE_ORIGIN = "https://sfr-rescue.pages.dev";
+
+// Renders a real, crawlable, server-rendered page per animal — the site's
+// header/footer/CSS/app.js are reused verbatim so it matches every other
+// page, but the <head> tags and body content are generated from live data
+// instead of being baked into a client-rendered SPA-style hash route.
+function renderAnimalPage(a) {
+  const rawImg = a.imageUrls?.[0] || a.imageUrl || "/opengraph.jpg";
+  // Stored image URLs are site-relative ("/media/animals/...") — fine for the
+  // on-page <img>, but og:image/twitter:image need an absolute URL or social
+  // crawlers (Facebook, Slack, etc.) won't resolve the preview image at all.
+  const img = /^https?:\/\//i.test(rawImg) ? rawImg : SITE_ORIGIN + rawImg;
+  const isRes = a.status === "resident";
+  const title = `${a.name} — ${a.species || "Rescue Animal"} ${isRes ? "at Saint Francis Sanctuary" : "for Adoption"} | Saint Francis Rescue`;
+  const desc = (a.description || `Meet ${a.name}, a rescued ${(a.species || "animal").toLowerCase()} at Saint Francis Rescue & Sanctuary in Yuma, AZ.`).slice(0, 300);
+  const url = `${SITE_ORIGIN}/animal/${a.id}-${slugify(a.name)}`;
+  const statusLabel = { available: "Available for adoption", fostered: "In foster care", adopted: "Already adopted", resident: "Sanctuary resident" }[a.status] || a.status;
+  const STATUS_TAG_CLASS = { available: "tag-available", fostered: "tag-fostered", adopted: "tag-adopted", resident: "tag-resident" };
+  const cta = isRes
+    ? `<a class="btn btn-gold" href="donate.html">Support ${esc(a.name)}</a>`
+    : `<a class="btn btn-clay" href="${a.needsFoster ? "foster-apply.html" : "adopt-apply.html"}?animal=${encodeURIComponent(a.name)}">Apply to ${a.needsFoster ? "foster" : "adopt"} ${esc(a.name)}</a>`;
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${url}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:image" content="${esc(img)}">
+<meta property="og:url" content="${url}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="${esc(img)}">
+<meta name="theme-color" content="#1f3a2e">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/images/logo-mark-sm.png" sizes="any">
+<link rel="apple-touch-icon" href="/images/logo-mark-sm.png">
+<link rel="preload" as="font" type="font/woff2" href="/fonts/fraunces-wght-normal.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/hanken-400.woff2" crossorigin>
+<link rel="stylesheet" href="/styles.css?v=36">
+<link rel="manifest" href="/manifest.json">
+</head>
+<body data-page="animal-detail">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<div class="scrollbar"></div><div class="announce" id="announce-bar">100% volunteer-run &middot; Every dollar goes straight to the animals &middot; <a href="/donate.html">Donate &rarr;</a></div>
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="/index.html" aria-label="Saint Francis Rescue and Sanctuary home">
+      <img loading="lazy" src="/images/logo.webp" alt="Saint Francis Rescue logo" width="42" height="42" style="object-fit:contain">
+      <span class="brand-text"><strong>Saint Francis</strong><span>Rescue &amp; Sanctuary</span></span>
+    </a>
+    <nav class="nav-links" id="primary-nav" aria-label="Primary">
+      <a href="/index.html" data-nav="home">Home</a>
+      <a href="/animals.html" data-nav="animals">Our Animals</a>
+      <a href="/volunteer.html" data-nav="volunteer">Volunteer</a>
+      <a href="/fundraiser.html" data-nav="fundraiser">Auction &amp; Fundraiser</a>
+      <div class="nav-dropdown-wrapper">
+        <a href="/about.html" data-nav="about" class="nav-dropdown-toggle">Our Story <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-left:4px"><path d="M6 9l6 6 6-6"/></svg></a>
+        <div class="nav-dropdown-menu">
+          <a href="/ways-to-help.html">Ways to Help</a>
+          <a href="/corporate.html">Corporate Giving</a>
+          <a href="/press.html">Press &amp; Media</a>
+          <a href="/faq.html">FAQ</a>
+        </div>
+      </div>
+      <a href="/contact.html" data-nav="contact">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-gold btn-sm" href="/donate.html">Donate</a>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+<a id="top"></a>
+<main id="main-content" tabindex="-1">
+<section class="section tone-bone2">
+  <div class="wrap">
+    <div class="crumb"><a href="/index.html">Home</a> / <a href="/animals.html">Our Animals</a> / ${esc(a.name)}</div>
+    <div class="modal-detail" style="margin-top:1.4rem">
+      <div class="modal-gallery"><img src="${esc(img)}" alt="${esc(a.name)}" style="width:100%;border-radius:var(--radius-lg)"></div>
+      <div class="modal-info">
+        <span class="tag ${STATUS_TAG_CLASS[a.status] || "tag-available"}">${esc(statusLabel)}</span>
+        ${a.needsFoster ? '<span class="tag tag-foster">Needs foster</span>' : ""}
+        <h1 style="font-size:2.2rem;margin-top:.8rem">${esc(a.name)}</h1>
+        <p class="eyebrow" style="margin:.3rem 0 .6rem">${esc(a.species || "")}${a.breed ? " &middot; " + esc(a.breed) : ""}${a.age ? " &middot; " + esc(a.age) : ""}${a.sex ? " &middot; " + esc(a.sex) : ""}</p>
+        <p style="margin-bottom:1.4rem;white-space:pre-line">${esc(a.description || "")}</p>
+        <div style="display:flex;gap:.7rem;flex-wrap:wrap;align-items:center">
+          ${cta}
+          <a class="btn btn-light" href="/animals.html#animal-${a.id}">See full gallery</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <img loading="lazy" src="/images/logo.webp" alt="" width="44" height="44" style="object-fit:contain">
+          <strong>Saint Francis</strong>
+        </div>
+        <p style="max-width:34ch;color:rgba(251,248,241,.72);font-size:.95rem">A volunteer-run farm animal rescue &amp; sanctuary in Yuma, Arizona. No office. No paid staff. Just people who show up for the animals.</p>
+        <div class="socials">
+          <a href="https://www.facebook.com/profile.php?id=61585411116127" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5.5H14c-2 0-3.5 1.5-3.5 3.6V11H8v3h2.5v6.5h3V14H16l.5-3h-3V9.4c0-.6.4-.9 1-.9Z"/></svg></a>
+          <a href="https://www.instagram.com/saintfrancisrescueandsanctuary" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.6" cy="7.4" r="1" fill="currentColor" stroke="none"/></svg></a>
+        </div>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <div class="foot-links">
+          <a href="/index.html">Home</a>
+          <a href="/animals.html">Our Animals</a>
+          <a href="/volunteer.html">Volunteer</a>
+          <a href="/fundraiser.html">Auction &amp; Fundraiser</a>
+          <a href="/about.html">Our Story</a>
+          <a href="/contact.html">Contact</a>
+        </div>
+      </div>
+      <div>
+        <h4>Support</h4>
+        <div class="foot-links">
+          <a href="/donate.html">Donate</a>
+          <a href="/ways-to-help.html">Ways to Help</a>
+          <a href="/fundraiser.html">Fundraiser Auction</a>
+          <a href="/volunteer.html">Become a Volunteer</a>
+          <a href="/corporate.html">Corporate Giving</a>
+          <a href="/faq.html">FAQ</a>
+          <a href="/press.html">Press &amp; Media</a>
+        </div>
+      </div>
+      <div class="foot-contact">
+        <h4>Find Us</h4>
+        <p>Saint Francis Rescue and Sanctuary of Yuma</p>
+        <p>PO Box 25413</p>
+        <p>Yuma, AZ 85367</p>
+        <p style="margin-top:.6rem">EIN: 99-0599742</p>
+        <a href="/contact.html" class="btn btn-light btn-sm" style="margin-top:.9rem">Send a message</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>&copy; <span data-year></span> Saint Francis Rescue and Sanctuary of Yuma. All rights reserved.</span>
+      <nav class="foot-legal" aria-label="Legal">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/accessibility.html">Accessibility</a>
+        <a href="/press.html">Press</a>
+      </nav>
+    </div>
+    <div class="foot-bottom" style="border-top:0;padding-top:0">
+      <span class="badge501">Registered 501(c)(3) Non-Profit &middot; Donations are tax-deductible</span>
+      <span class="foot-credit">Designed by Venom Vision Designs</span>
+    </div>
+  </div>
+</footer>
+<a class="back-top" href="#top" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:22px;height:22px" aria-hidden="true"><ellipse cx="7.2" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="12" cy="7.6" rx="1.8" ry="2.5"/><ellipse cx="16.8" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="4.6" cy="14" rx="1.5" ry="2"/><ellipse cx="19.4" cy="14" rx="1.5" ry="2"/><path d="M12 12.4c-2.6 0-4.8 1.9-5.3 4.1-.3 1.4.8 2.6 2.2 2.6.9 0 1.7-.4 3.1-.4s2.2.4 3.1.4c1.4 0 2.5-1.2 2.2-2.6-.5-2.2-2.7-4.1-5.3-4.1Z"/></svg>
+</a>
+<script src="/app.js?v=37"></script>
+</body>
+</html>`;
+}
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+var STATIC_SITEMAP_PAGES = [
+  { path: "/", priority: "1.0", changefreq: "weekly" },
+  { path: "/donate", priority: "1.0", changefreq: "weekly" },
+  { path: "/animals", priority: "0.9", changefreq: "daily" },
+  { path: "/adopt-apply", priority: "0.8", changefreq: "monthly" },
+  { path: "/foster-apply", priority: "0.8", changefreq: "monthly" },
+  { path: "/volunteer", priority: "0.7", changefreq: "monthly" },
+  { path: "/volunteer-signup", priority: "0.7", changefreq: "monthly" },
+  { path: "/about", priority: "0.6", changefreq: "monthly" },
+  { path: "/fundraiser", priority: "0.6", changefreq: "weekly" },
+  { path: "/corporate", priority: "0.5", changefreq: "monthly" },
+  { path: "/ways-to-help", priority: "0.5", changefreq: "monthly" },
+  { path: "/faq", priority: "0.5", changefreq: "monthly" },
+  { path: "/press", priority: "0.4", changefreq: "monthly" },
+  { path: "/contact", priority: "0.5", changefreq: "monthly" },
+  { path: "/names", priority: "0.3", changefreq: "yearly" },
+  { path: "/privacy", priority: "0.2", changefreq: "yearly" },
+  { path: "/terms", priority: "0.2", changefreq: "yearly" },
+  { path: "/accessibility", priority: "0.2", changefreq: "yearly" }
+];
+
 var root = new Hono2();
+root.get("/animal/:idSlug", async (c) => {
+  const idSlug = c.req.param("idSlug");
+  const id = Number(String(idSlug).match(/^\d+/)?.[0]);
+  if (!id) {
+    const notFound = await c.env.ASSETS.fetch(new Request(new URL("/404.html", c.req.url)));
+    return new Response(notFound.body, { status: 404, headers: notFound.headers });
+  }
+  const db = getDb(c.env);
+  const [animal] = await db.select().from(animalsTable).where(eq(animalsTable.id, id));
+  if (!animal) {
+    const notFound = await c.env.ASSETS.fetch(new Request(new URL("/404.html", c.req.url)));
+    return new Response(notFound.body, { status: 404, headers: notFound.headers });
+  }
+  const canonicalSlug = `${animal.id}-${slugify(animal.name)}`;
+  if (idSlug !== canonicalSlug) {
+    return c.redirect(`/animal/${canonicalSlug}`, 301);
+  }
+  return c.html(renderAnimalPage(serializeAnimal(animal)));
+});
+root.get("/sitemap.xml", async (c) => {
+  const db = getDb(c.env);
+  const animals = await db.select({ id: animalsTable.id, name: animalsTable.name, status: animalsTable.status, createdAt: animalsTable.createdAt })
+    .from(animalsTable)
+    .where(sql`${animalsTable.status} IN ('available', 'fostered', 'resident')`);
+  const staticEntries = STATIC_SITEMAP_PAGES.map((p) => `  <url>
+    <loc>${SITE_ORIGIN}${p.path}</loc>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`);
+  const animalEntries = animals.map((a) => `  <url>
+    <loc>${SITE_ORIGIN}/animal/${a.id}-${slugify(a.name)}</loc>
+    <lastmod>${a.createdAt.toISOString().slice(0, 10)}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`);
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticEntries.concat(animalEntries).join("\n")}
+</urlset>`;
+  return c.text(xml, 200, { "Content-Type": "application/xml" });
+});
 root.get("/media/*", async (c) => {
   if (!c.env.MEDIA) {
     return c.json({ error: "Image storage is not configured" }, 500);
@@ -15091,11 +15524,11 @@ root.route("/", app);
 var onRequest = handle(root);
 
 // _worker_entry.ts
-var BLOCKED_ASSETS = /^\/(wrangler\.toml|package(-lock)?\.json|[^/]*\.(md|toml)|\.[^/]+)$/i;
+var BLOCKED_ASSETS = /^\/(docs\/.*|wrangler\.toml|package(-lock)?\.json|[^/]*\.(md|toml)|\.[^/]+)$/i;
 var worker_entry_default = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/media/")) {
+    if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/media/") || url.pathname.startsWith("/animal/") || url.pathname === "/sitemap.xml") {
       return root.fetch(request, env, ctx);
     }
     // Never serve project/config files (docs, wrangler.toml, dotfiles) as public assets.

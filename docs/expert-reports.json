@@ -1,0 +1,939 @@
+[
+  {
+    "expert": "Kellie Rados — UX designer specializing in animal-welfare organizations (Best Friends Animal Society redesign)",
+    "integration_assessment": "The integration is real but one-way and lossy — a funnel that destroys its most valuable cargo. What works: the app manages the website's animal listings (AnimalDetail's WebsiteListingTab via the functions/api/site proxy), auction items flow from AuctionItemsPage to fundraiser.html, and website contact submissions surface in the app's Inbox (stores/contacts.js). What fails: (1) The website's rich multi-step adoption/foster applications are flattened into a 4-column \"contacts\" row at the API boundary — _worker.js's POST /contact stores only name/email/subject/message, silently discarding phone, address, experience, living setup, and every other field the applicant carefully filled in. (2) The Inbox \"Send reply\" button only writes a `reply` column to Neon (contactsService.js PATCH) — no email is ever sent, so staff believe they've responded and applicants never hear back. (3) The app's ApplicationsPage/AdoptionsPage read a separate Firestore `applications` collection populated by seed scripts — real website applicants never reach the \"Applications\" workflow, so the approve/deny pipeline operates on phantom data. (4) Donations (Zeffy links) and newsletter signups bypass the app's donors store entirely — the donor CRM has no live inflow. The front door exists; the hallway behind it is disconnected from the rooms.",
+    "top_findings": [
+      {
+        "title": "Adoption/foster application data is silently discarded at the API — staff cannot honor the '48-hour call' promise",
+        "severity": "critical",
+        "evidence": "adopt-apply.html lines 464-509 collects 11 required fields (phone, address, experience, setup, other-animals, care, goals...) and promises 'Within 48 hours: We'll call'. It submits via SF.sendContact (app.js line 37) to POST /api/contact, but _worker.js (~line 14655) inserts only name, email, subject, message into contactsTable. foster-apply.html has the same pattern.",
+        "detail": "The applicant's phone number — required in the form, essential to the promised follow-up call — never reaches storage. Same for their address, animal-care experience, and living situation. Staff reviewing the Inbox see only the free-text 'Anything else we should know?' answer. Every adoption application since launch has arrived amputated, and the emotional contract set by the beautifully written confirmation message ('We'll call to discuss the animal you're interested in') is structurally impossible to keep."
+      },
+      {
+        "title": "Inbox 'Send reply' never contacts the applicant — a false affordance that strands adopters",
+        "severity": "critical",
+        "evidence": "SB- v2/src/services/contactsService.js replyToContact() PATCHes {reply: text} to the site API; SB- v2/src/components/features/Inbox.vue shows 'Send reply' / '✓ Replied' pills. No email-sending code exists anywhere in _worker.js (no MailChannels/Resend/SMTP).",
+        "detail": "A staffer taps Reply, writes a warm response, sees 'Sending…' then '✓ Replied', and moves on believing the adopter was contacted. The text is only stored in a database column nobody outside the org can see. This is the single most damaging dead end in the system: it converts staff diligence into applicant ghosting. The mailto: link on the email address is the only real channel, and nothing pushes staff toward it."
+      },
+      {
+        "title": "The website's adoption funnel is broken: the application page is orphaned and the animal modal routes to the generic contact form",
+        "severity": "high",
+        "evidence": "animals.html openModal() CTA (line ~336) links to contact.html?subject=adopt&about={name}, never to adopt-apply.html. Grep shows adopt-apply.html is linked only from ways-to-help.html, contact.html, names.html, and foster-apply.html — not from index.html, animals.html, or the primary nav (index.html nav-links block has no Adopt entry; Ways to Help hides inside the 'Our Story' dropdown).",
+        "detail": "The moment of peak emotional commitment — 'Meet Luna' → modal → 'Inquire about Luna' — dumps the visitor into a generic contact textarea, while the polished 3-step application with progress bar sits on a page most visitors will never find. Two competing paths (inquiry vs. application) produce inconsistent data, and neither carries a structured animal ID, so staff must parse which animal was meant from free text."
+      },
+      {
+        "title": "Dual disconnected application systems in the app: the Applications workflow operates on seed data while real applicants sit in the Inbox",
+        "severity": "high",
+        "evidence": "SB- v2/src/components/features/admin/ApplicationsPage.vue reads useApplicationsStore() (Firestore 'applications' collection, populated via SEED_APPLICATIONS_QUICKSTART.md scripts); real website submissions arrive via stores/contacts.js into Inbox.vue as flattened messages. denyVolunteer/denyAdoption (lines 127-137) call store.deleteApplication — denial erases the record.",
+        "detail": "Staff have an approve/deny pipeline UI that no real applicant ever enters, and a real applicant stream (Inbox) with no workflow states beyond archive/delete. 'Deny' hard-deletes with no reason captured, no notification to the applicant, and no history for a person who may reapply. There is no interview/home-check/decision pipeline anywhere, which is the core operational flow of a rescue."
+      },
+      {
+        "title": "No URL routing in SanctuaryBase: back button exits the app, nothing is deep-linkable, and refresh shows a fake animal",
+        "severity": "high",
+        "evidence": "No vue-router in SB- v2/package.json; navigation is ui.currentTab (stores/ui.js line 21); grep finds zero pushState/popstate/location.hash usage in src/. AnimalDetail.vue (~line 211) falls back to a hard-coded demo animal ('Luna', Domestic Shorthair) when ui.selectedAnimal is null — which is exactly what happens on any page refresh.",
+        "detail": "A vet tech who refreshes mid-shift on an animal's Meds tab lands on the dashboard; if state partially survives they see fabricated data for a cat named Luna — actively dangerous in a medical context. Staff cannot text each other 'check this animal's chart' links, cannot bookmark the feeding log, and the Android back gesture (the most-used gesture on a phone held in one hand at a barn) closes the app."
+      },
+      {
+        "title": "Daily-care workflows are desktop-form-shaped, not barn-shaped: rounds are a lose-everything monolith and feeding has a dead button",
+        "severity": "high",
+        "evidence": "MorningRoundsPage.vue renders one form over every animal with a single 'Submit Rounds' button (line 28) — no per-animal save, no draft persistence; navigating away discards all checkboxes/notes. FeedingLogPage.vue line 122: the '✓ Fed' button on pending feedings has no @click handler (dead control). Feeding modal selects animals via a plain <select> (line 32) and bulk mode hard-codes amount: 'Standard' (line 191).",
+        "detail": "Rounds at a sanctuary happen animal-by-animal over an hour with gloves on and interruptions; a workflow that requires completing the entire roster in one session before anything persists guarantees data loss the first time a volunteer gets pulled away. The dead '✓ Fed' button means pending feedings can never be marked done from the list. Meanwhile volunteer.html line 249 promises SanctuaryBase 'works offline too' — but there is no service worker or offline persistence anywhere in SB- v2 (verified in public/ and src/), so the field-usability promise is marketing fiction."
+      },
+      {
+        "title": "AnimalDetail's 16 flat tabs create severe information-architecture overload",
+        "severity": "medium",
+        "evidence": "AnimalDetail.vue lines 192-208: Profile, Website, Health, Meds, Vaccines, Weight, Diet & Health, Records, Docs, Vet, Log, Met, Traits, Memory, SOS, Assess — 16 tabs, several with cryptic labels and overlapping scopes (Health vs Diet & Health vs Records vs Vet vs Log; Docs vs Records).",
+        "detail": "On a phone this is an endless horizontal strip of ambiguous words. A volunteer looking for 'when was she last vaccinated' has four plausible tabs to try. Medical data is fragmented across Health/Meds/Vaccines/Weight/Records/Vet/Met with no unified medical timeline."
+      },
+      {
+        "title": "Navigation chrome is overcrowded for staff: 7 bottom-nav tabs plus a 33-item Admin Hub grid, with hub-and-spoke tap taxes",
+        "severity": "medium",
+        "evidence": "BottomNav.vue lines 30-38: seven tabs for admin/staff (5 is the mobile ceiling before touch targets shrink below ~48px on 375px screens). AdminHub.vue lists ~33 features across 7 sections as a flat icon grid; FeedingLogPage.vue line 3 shows the pattern of '← Admin Hub' back buttons, so the daily loop of rounds→feeding→meds→EOD costs 2+ taps per transition through the hub.",
+        "detail": "The Admin Hub is a sitemap, not a workflow. Daily Care is the second section down, below Quick Access, even though it is the actual daily work. Staff doing the morning circuit bounce hub→feature→hub→feature all day. There is no 'My Day' task-sequenced view tying rounds, feedings, med runs, and assigned tasks into one flow (the Dashboard's command center is close, but it is stats-first, not task-first)."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "Build a unified, structured application pipeline spanning both properties",
+        "impact": "transformative",
+        "detail": "Replace the flattened /api/contact funnel with typed endpoints (POST /api/applications with type adoption|foster|volunteer, full field payload, and animal_id). In SanctuaryBase, merge Inbox's real inflow with ApplicationsPage/AdoptionsPage into one pipeline module with stages (New → Reviewing → Interview scheduled → Home check → Approved → Adopted / Declined-with-reason), linked to the animal record and to a person record in the People CRM. Never delete on deny — capture reason and keep history for reapplicants. This single module fixes the phantom-data ApplicationsPage, the lossy contact funnel, and the missing adoption workflow at once."
+      },
+      {
+        "title": "Add a real outbound communications layer so replies and status changes actually reach people",
+        "impact": "transformative",
+        "detail": "Wire email sending (Cloudflare Email Service or Resend) into the worker/app functions with templates: application received, interview invite, approval, denial, donation thanks. Make Inbox's 'Send reply' genuinely send, log every message to the person's timeline (donors/contacts stores), and add automatic acknowledgment emails on form submission. Until this exists, every other CRM ambition is theater — the org literally cannot close the loop with an adopter from inside the system."
+      },
+      {
+        "title": "Redesign field workflows mobile-first with per-item saves and true offline support",
+        "impact": "transformative",
+        "detail": "Rebuild Morning Rounds as a resumable per-animal checklist (tap animal → big Fed/Water/Meds/Health toggles → auto-saves that animal → next), with progress persisted so interruptions cost nothing. Replace the feeding modal's <select> with a searchable tap-grid of animal cards; fix the dead '✓ Fed' button. Add a service worker + Firestore offline persistence with a sync queue so the 'works offline' promise on volunteer.html becomes true — spotty barn signal is the defining constraint for this user base."
+      },
+      {
+        "title": "Introduce URL routing (vue-router) and kill the demo-data fallback",
+        "impact": "major",
+        "detail": "Map every tab in App.vue's routeMap to a real route (/animals/:id/meds, /admin/feeding, etc.) so back-button, refresh, bookmarks, and shareable deep links work. Remove AnimalDetail.vue's hard-coded 'Luna' fallback — on missing state, fetch by route param or show a not-found state, never fabricated medical data. This is a mostly mechanical migration given routeMap already exists as a single object."
+      },
+      {
+        "title": "Fix the website adoption funnel: carry the animal from card to application",
+        "impact": "major",
+        "detail": "Change the animals.html modal CTA to 'Apply to adopt {name}' linking adopt-apply.html?animal={id} with the animal prefilled and shown as a card atop the form; keep 'Ask a question' as the secondary contact path. Add Adopt/Foster to the primary nav (adopt-apply.html is currently orphaned behind the Our Story dropdown). Relax step-3 friction: 'Anything else we should know?' should not be a required field."
+      },
+      {
+        "title": "Give staff a task-first 'My Day' home and slim the navigation",
+        "impact": "major",
+        "detail": "Evolve the Dashboard's command center into a sequenced daily view: rounds due, feedings remaining (per animal, tappable), med runs, my assigned tasks, EOD report prompt after 4pm — so the daily loop happens in one place instead of hub-and-spoke through AdminHub's 33-item grid. Cut BottomNav to 5 tabs (Home, Animals, Inbox, Shifts, More) and move Vet Hub/People/Admin into a More sheet; add a search-everything command bar for the long tail."
+      },
+      {
+        "title": "Consolidate AnimalDetail's 16 tabs into ~6 grouped sections with a unified medical timeline",
+        "impact": "nice-to-have",
+        "detail": "Group into Profile, Medical (Health+Meds+Vaccines+Weight+Records+Vet+Met as a single chronological timeline with filters), Daily Care (Diet, feeding history, rounds notes), Behavior (Traits+Assess+SOS), Story (Memory+Docs+photos), and Website (listing). Rename cryptic labels — 'Met' and 'SOS' mean nothing to a new volunteer."
+      },
+      {
+        "title": "Close the donor loop: pull Zeffy donations and newsletter signups into the CRM",
+        "impact": "nice-to-have",
+        "detail": "Zeffy webhooks (or CSV import as a first step) should create/update donor records in the donors store with gift history, powering acknowledgment emails and the FinanceStats/Ledger modules from real data. Add a public 'application status' page on the website (submission ID emailed on receipt) so adopters aren't left wondering — the emotional design of the site sets a high-touch expectation the backend should honor."
+      }
+    ],
+    "strengths": [
+      "The website's emotional design is genuinely excellent and should be preserved wholesale: story-led copy ('No office. No paid staff. Just people who show up for the animals.'), impact-anchored donation tiers ($25 = a week of goat feed), warm resident-animal framing on animals.html ('They're not looking for a new home — but they are why we need yours'), and the expectation-setting adoption confirmation message.",
+      "Website craft details are strong: keyboard-activatable animal cards with focus management (app.js lines 117-124, 541+), aria-live toast region, share buttons with Web Share API fallback, honeypot spam field, multi-step form with progress bar, skeleton loaders, and a modal with prev/next animal browsing.",
+      "SanctuaryBase's role-based navigation model (admin/staff/volunteer tab sets in BottomNav.vue, adminOnly filtering in AdminHub.vue) is the right architecture for a mixed staff/volunteer org and just needs pruning, not rethinking.",
+      "The Dashboard command center (Fed Today x/y progress, compliance overdue alerts, inbox notification banner) is well-conceived glanceable ops design — the seed of the 'My Day' view already exists.",
+      "The Inbox is the most polished workflow in the app: unread-since-last-open logic, filter tabs with counts, inline reply composer, two-tap armed delete, and clear type pills parsed from subject.",
+      "The website-to-app plumbing pattern is sound and secure: the functions/api/site proxy with Firebase-auth-gated server-side token forwarding, WebsiteListingTab for managing public listings from the animal record, and auction item management — the pipes exist; they just need to carry structured data.",
+      "A consistent design system (DESIGN_SYSTEM.md, CSS tokens, shared ui/ component kit, dark mode) keeps the app visually coherent across 40+ pages built quickly."
+    ]
+  },
+  {
+    "expert": "JW Willeck — designer specializing in small animal-rescue web presences (Southwest Metro Animal Rescue redesign); reviewing visual design system coherence, brand consistency, and maintainability across the Saint Francis public website and SanctuaryBase v2",
+    "integration_assessment": "The data plumbing between the two properties is better than most small rescues ever build: the website's _worker.js exposes a clean public API (/api/animals, /animals/featured, /stats, /contact, /newsletter) consumed by app.js, admin duties were correctly consolidated (admin.html is now a redirect card pointing to SanctuaryBase), and the app manages website content through a server-side proxy (functions/api/site/[[path]].js forwards to sfr-rescue.pages.dev/api with the site's admin token kept off the browser). The AnimalDetail \"WebsiteListingTab.vue\" is a genuinely great editorial workflow — publish/unpublish, AI-written public bios, cover photo, featured flags. But visually the two products share nothing: the website is a warm, editorial, light \"desert sanctuary\" (Fraunces serif, pine green #1f3a2e, bone paper #f4efe6, antique gold, clay, paper-grain texture), while the app is a dark neon-purple product (#1A1033 backgrounds, orange #FF7A45, glowing mint #4EFFC5, Nunito/Fredoka One, glow shadows). A volunteer moving from saintfrancisrescue.org to SanctuaryBase experiences two different organizations. Functionally, the biggest gap is applications: adopt-apply.html and volunteer-signup.html submit through generic /api/contact (SF.sendContact), landing in the site's contact inbox, while the app's ApplicationsPage.vue reads a Firestore 'applications' collection populated only by seed scripts (seed:applications) — real applications never reach the Applications module. Donations similarly bounce out to Zeffy with no return path into the donors/ledger stores.",
+    "top_findings": [
+      {
+        "title": "Website and app are two unrelated brands",
+        "severity": "high",
+        "evidence": "SaintFrancis-Website/styles.css :root (lines 50–81: --pine #1f3a2e, --bone #f4efe6, --gold, --clay; Fraunces/Hanken Grotesk, light, paper-grain body::before) vs SB- v2/src/design-tokens.css (lines 13–102: --color-bg-1 #1A1033 dark purple, --color-brand #FF7A45 orange, --color-mint #4EFFC5 neon, Nunito/'Fredoka One'). Header.vue line 10 renders 'Saint Francis Rescue' in neon mint on dark purple.",
+        "detail": "Zero shared tokens, fonts, colors, radii, or components. The website reads as an established sanctuary; the app reads as a gaming dashboard. Staff, volunteers, fosters, and board members cross between them daily (admin.html literally redirects into the app), so the brand break is felt constantly and undermines the 'one organization, one system' goal."
+      },
+      {
+        "title": "The app's own token migration never happened — the design system documents one vocabulary while the entire codebase uses another",
+        "severity": "high",
+        "evidence": "DESIGN_SYSTEM.md 'Migration Guide' mandates --color-* names; grep across src/components shows ~100 of 109 .vue files using legacy shorthands (--mint, --ink, --coral, --surface, --bg) that only exist as compatibility mappings in src/style.css lines 13–59. The ui/ library itself (AppBadge.vue, AppInput.vue, AppSelect.vue, AlertBox.vue, StatCard.vue, UserRow.vue, SectionLabel.vue) uses legacy names.",
+        "detail": "Because the canonical library components use the legacy tokens, every new page copies them, so the documented system is fiction. Two names for every color doubles the vocabulary a small team must learn and makes a future re-theme (e.g., aligning to Saint Francis brand) riskier than it should be."
+      },
+      {
+        "title": "UI-library rules are broadly violated in feature pages",
+        "severity": "medium",
+        "evidence": "src/components/ui/README.md rules 4 and 8 ('Use <AppButton> for all buttons — never write <button class=...>', 'No hardcoded hex colors'); grep shows raw <button in 57 of ~70 feature .vue files, 29 files containing hardcoded hex (158 occurrences), and inline style attributes even inside flagship components (WebsiteListingTab.vue lines 31, 42: style=\"margin-top:12px\").",
+        "detail": "The library exists and is good (AppButton, AppCard, AppInput, EmptyState, StatCard, PageContainer used in 49+ files), but with 40+ admin pages each hand-rolling tables, modals, tab bars, and buttons, drift compounds. The library is missing the components those pages actually need (data table, modal, page header, tab bar), which is why authors go ad-hoc."
+      },
+      {
+        "title": "Three styling systems coexist in the app",
+        "severity": "medium",
+        "evidence": "package.json devDependencies include tailwindcss ^4.3.1 and src/style.css line 1 is @import \"tailwindcss\"; ARCHITECTURE.md claims 'Tailwind CSS + CSS Variables'; yet components are styled almost entirely via scoped CSS + custom properties, with Tailwind-ish utility classes appearing in only a handful of files (LoginScreen.vue, ApplicationsPage.vue, DonorsPage.vue).",
+        "detail": "Tailwind v4, a custom token system, and per-component scoped CSS all ship together. For a small-org team this triples the ways any given style can be expressed and bloats the toolchain for near-zero payoff."
+      },
+      {
+        "title": "Applications submitted on the website never reach the app's Applications module",
+        "severity": "high",
+        "evidence": "foster-apply.html line 477 and volunteer-signup.html line 835 submit via SF.sendContact / fetch('/api/contact'); _worker.js exposes no /api/applications route (route list: /animals, /contact, /newsletter, /suggestions, /admin/*); SB- v2 src/stores/applications.js reads Firestore collection 'applications', populated only by src/scripts/seedApplications.js.",
+        "detail": "The org's flagship front-door flow (adopt/foster/volunteer) degrades into unstructured contact-inbox messages, while ApplicationsPage.vue's approve/deny pipeline operates on seed data. The carefully designed multi-step form on adopt-apply.html (progress bar, quick-interest prefill) deserves a structured landing spot."
+      },
+      {
+        "title": "Theme persistence is split across three writers with mismatched localStorage keys",
+        "severity": "low",
+        "evidence": "SB- v2/index.html flash-prevention script reads 'sb_theme'; src/App.vue lines 146–150 read/write 'sb_theme'; src/stores/ui.js line 32 toggleTheme writes 'theme' (dead key).",
+        "detail": "A theme toggled through ui.toggleTheme persists to a key nothing reads, so the choice can silently fail to survive reload depending on which code path runs. Symptomatic of the broader pattern: system rules defined in one place, re-implemented differently elsewhere."
+      },
+      {
+        "title": "App typography undermines accessibility and diverges from the website's font strategy",
+        "severity": "medium",
+        "evidence": "SB- v2/design-tokens.css lines 105–114: px-based scale with --font-size-base: 13px; src/style.css line 3 imports Google Fonts via render-blocking CSS @import. Website styles.css lines 1–43 self-hosts Fraunces/Hanken woff2 with a comment 'was Google Fonts; now first-party for speed + privacy'.",
+        "detail": "13px px-locked body text ignores user font-size preferences and is small for volunteers using the app in barns on phones; the website already solved the font-hosting question correctly and the app ignores that precedent. 'Fredoka One' also gives the app a playful-toddler display face that clashes with the website's dignified Fraunces."
+      },
+      {
+        "title": "Documentation drift between DESIGN_SYSTEM.md / ARCHITECTURE.md and reality",
+        "severity": "low",
+        "evidence": "DESIGN_SYSTEM.md shows AppCard variants ('elevated', 'outlined', 'gradient') and alert classes (.success-box/.warn-box) alongside the differently-specified ui/README.md (AlertBox component, different AppButton variant list omitting 'ghost' which exists in AppButton.vue line 15); ARCHITECTURE.md folder listing omits ~20 real stores (quarantine, waivers, safeHouses, auctionItems, animalsAdmin).",
+        "detail": "For a small org where the docs ARE the design team, three partially contradictory sources of truth (DESIGN_SYSTEM.md, ui/README.md, actual components) guarantee continued drift. One of them must win."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "One brand, one token source: re-skin SanctuaryBase in the Saint Francis identity",
+        "impact": "transformative",
+        "detail": "Extract the website's palette and type into a shared brand token layer (pine/moss/sage greens, bone/cream surfaces, gold/clay accents, Fraunces for display, Hanken Grotesk for UI) published as a single design-tokens file consumed by both styles.css and the app's design-tokens.css. Make light 'sanctuary paper' the app's default theme and rebuild dark mode as a deep-pine night theme (useful for evening rounds) instead of the current purple/neon-mint scheme. Keep the app's excellent token architecture (semantic scales, faint/glow variants, light-mode overrides in design-tokens.css lines 228–317) — only the values change, which the compatibility-mapping layer in style.css actually makes feasible in one pass."
+      },
+      {
+        "title": "Finish the token migration and enforce it mechanically",
+        "severity-note": "",
+        "impact": "major",
+        "detail": "Codemod all legacy names (--mint, --ink, --coral, --surface, --bg, --teal-*) to the canonical --color-* names starting with the ui/ library itself, then delete the shim block in src/style.css lines 13–59. Add stylelint with two rules — no raw hex in .vue files, no unknown custom properties — wired into the build. Fix the theme key mismatch by making ui.js the single theme owner using 'sb_theme'. This is a week of work that permanently ends the two-vocabulary problem."
+      },
+      {
+        "title": "Expand the ui/ library to cover what the 40+ admin pages actually build by hand",
+        "impact": "major",
+        "detail": "Add the missing primitives that grep shows every admin page reinventing: AppTable (sortable/filterable rows — PeopleListTable.vue, LedgerPage.vue, WaiversPage.vue each have their own), AppModal (replacing per-page overlay divs like GrantDetailModal.vue, DietModal.vue, ConfirmDeleteDialog.vue), PageHeader (title + actions row duplicated in ~50 files), AppTabs (AnimalDetail.vue's 11 tabs and VetHub sub-tabs hand-roll the same pattern), and FormField/AppTextarea/AppDatePicker. Then collapse DESIGN_SYSTEM.md and ui/README.md into one document that matches the code — for a two-or-three-maintainer org, the README-in-the-components-folder is the right single source of truth."
+      },
+      {
+        "title": "Drop Tailwind; standardize on tokens + scoped CSS + the ui/ library",
+        "impact": "major",
+        "detail": "Tailwind v4 is imported (style.css line 1) but used in only a handful of files; remove @import 'tailwindcss', the tailwindcss/@tailwindcss/postcss/autoprefixer devDependencies, and convert the few utility-class stragglers (LoginScreen.vue, ApplicationsPage.vue, DonorsPage.vue) to the house pattern. One styling system a small team fully understands beats two systems half-used."
+      },
+      {
+        "title": "Structured application intake: make the website's forms feed the Applications module",
+        "impact": "transformative",
+        "detail": "Add POST /api/applications to the website _worker.js (type: adoption|foster|volunteer, animal_id, structured answers from the existing multi-step forms in adopt-apply.html/foster-apply.html/volunteer-signup.html), and have SanctuaryBase's applications store read real submissions through the existing /api/site proxy (the same pattern contactsService.js already proves out) instead of the seeded Firestore collection. Add status-change touchpoints (received/reviewing/approved emails) so the public site and internal pipeline are one funnel. This single module makes the website a true front door rather than a brochure with a mailbox."
+      },
+      {
+        "title": "Close the donation loop into donors and ledger",
+        "impact": "major",
+        "detail": "Donations currently exit to Zeffy (donate.html) and vanish from the system's view. Add a Zeffy webhook/CSV-import endpoint feeding the donors.js and ledger.js stores so FinanceStatsPage and DonorsPage reflect real giving, and surface a 'thanks + impact' page on the website driven by the same /api/stats the homepage already consumes. Pairs naturally with the existing newsletter subscriber flow."
+      },
+      {
+        "title": "Brand kit for app-generated public artifacts",
+        "impact": "nice-to-have",
+        "detail": "GrantLetterPage.vue, NewsletterPage.vue, and future adoption certificates produce documents that represent the organization externally; template them with the website's Fraunces/pine/gold identity (shared logo asset, letterhead partial) so everything a donor or grantor receives matches saintfrancisrescue.org. Currently the app's Header.vue falls back to hiding a missing /logo.png — the two properties don't even share a logo file."
+      },
+      {
+        "title": "App typography and accessibility pass",
+        "impact": "nice-to-have",
+        "detail": "Self-host the app's fonts as woff2 like the website does (styles.css lines 1–43 is the template), replace the render-blocking Google Fonts @import in style.css line 3, convert the px font scale in design-tokens.css to rem with a larger effective base (~15–16px) for barn/phone use, and retire 'Fredoka One' in favor of the shared display face. The app's existing prefers-reduced-motion and prefers-contrast handling is solid — keep it and add it to the website, which currently lacks the reduced-motion guard for its reveal animations."
+      }
+    ],
+    "strengths": [
+      "The website's design system is genuinely excellent for a small nonprofit: one coherent token set in styles.css (pine/bone/gold/clay, Fraunces/Hanken), self-hosted fonts with a documented rationale, tasteful signature details (paper-grain body::before, .eyebrow with gold rule, .divider-gold), and consistent button/card vocabulary across ~20 static pages — preserve this identity as the org brand.",
+      "The app has a real component library with teeth: src/components/ui with a barrel export, a README that states usage rules explicitly, and strong core components (AppButton with variants/sizes/loading state, AppCard with header/footer slots, EmptyState, StatCard, PageContainer used in 49+ files).",
+      "The token architecture in design-tokens.css is professionally structured — semantic color families with light/dark/faint/glow variants, full light-mode override block, z-index scale, motion tokens, prefers-reduced-motion and prefers-contrast support — only its values and adoption need work, not its design.",
+      "The integration plumbing is the right shape: public read API on the website worker, server-side authenticated proxy (functions/api/site/[[path]].js) keeping the site admin token out of the browser, admin consolidation via admin.html redirect, and the WebsiteListingTab publish/unpublish workflow with AI bio generation — a model for how the remaining modules (applications, donations) should connect.",
+      "The website's front-end craft is high: accessible toast/live-region pattern in app.js, keyboard activation for animal cards, analytics that 'must never break the page', escaped HTML rendering helpers, and noscript fallbacks for reveal animations."
+    ]
+  },
+  {
+    "expert": "Nonprofit SEO & Content Strategy Lead (INSIDEA-style agency review)",
+    "integration_assessment": "The integration is real but shallow, and it runs in the wrong direction for SEO. SanctuaryBase (Vue/Firebase, C:/Users/lawye/Projects/SB- v2) is the system of record for animals (Firestore `animals` + `applications` collections), and staff manually \"publish\" an animal to the website via WebsiteListingTab.vue → /api/site proxy (functions/api/site/[[path]].js, src/services/siteApi.js) → the website Worker's /api/admin/animals routes, which write to a completely separate Neon Postgres `animals` table (_worker.js ~line 14555). So public animal content is a hand-synced duplicate keyed by `siteAnimalId`. Inbound, the website's adoption/foster forms (adopt-apply.html line 464+) flatten a rich 11-field application into a single text blob POSTed to /api/contact → Neon `contacts` table → surfaced in SanctuaryBase's Inbox — while SanctuaryBase's dedicated `applications` Firestore store (src/stores/applications.js) never receives them; two disjoint pipelines. Impact stats are mostly hard-coded in the Worker (/api/stats returns yearsActive:14, animalsRescued:300, volunteers:22 as literals), so the rich operational data in SB (adoptions, outcomes, financeStats, feedingLogs) never feeds public storytelling or SEO content. Donations bypass both systems entirely (Zeffy external links), so donor data never reaches SB's donors store from the web. For SEO purposes, the app is a content goldmine (animal bios with AI writer, adoption outcomes, medical journeys, events/auction items) that currently emits only a thin, client-side-rendered JSON feed with zero crawlable URLs per animal.",
+    "top_findings": [
+      {
+        "title": "No indexable per-animal pages — the site's highest-value SEO content is invisible",
+        "severity": "critical",
+        "evidence": "animals.html line 113 renders an empty #animals-grid filled client-side by app.js (SF.getAnimals → /api/animals JSON); 'detail' views are hash URLs (app.js line 385: /animals.html#animal-{id}). _worker.js line 15098 only handles /api/* and /media/* — no HTML route per animal.",
+        "detail": "Queries like 'adopt [breed] Yuma', '[species] rescue Arizona', or an animal's name have no landing page. Hash fragments are not separate URLs to Google; the grid depends on JS rendering of an API call; there is no Product/ItemList/per-animal schema, no unique title/meta/OG per animal, and shared animal links all preview as the generic opengraph.jpg. This is the single largest organic-traffic loss for an adoption org — per-animal pages are what Petfinder/Adopt-a-Pet rank with."
+      },
+      {
+        "title": "Canonical domain is sfr-rescue.pages.dev — all equity accrues to a Cloudflare subdomain",
+        "severity": "critical",
+        "evidence": "Every canonical, og:url, schema url, sitemap.xml <loc>, and robots.txt Sitemap line points to https://sfr-rescue.pages.dev (e.g., index.html line 8). Meanwhile donate.html Zeffy links carry utm_source=saintfrancisrescue.org and a commented Plausible block references saintfrancisrescue.org — the intended brand domain was never wired up.",
+        "detail": "pages.dev subdomains have weak trust signals, can't build brand-domain authority, look unprofessional in SERPs and donor emails, and complicate a future migration (every URL, schema block, and GSC property will need to move — the longer it waits, the more equity is lost). Buying/attaching the custom domain and 301ing pages.dev is prerequisite to everything else."
+      },
+      {
+        "title": "SEO_IMPROVEMENTS.md materially misrepresents what is implemented",
+        "severity": "high",
+        "evidence": "C:/Users/lawye/Projects/SaintFrancis-Website/SEO_IMPROVEMENTS.md claims: #1 sitemap 'with 18 pages and image metadata' (sitemap.xml has 14 URLs, zero image tags); #4 'AggregateRating schema with 5-star rating and 3 reviews' (grep for AggregateRating across all HTML: zero hits); #14 'manifest.json and apple-mobile-web-app references removed' (index.html lines 33–36 still contain all of them); #6 breadcrumbs on 'index.html' (index.html has no BreadcrumbList).",
+        "detail": "The doc is the team's SEO source of truth and it can't be trusted. The one silver lining: the fabricated 3-review AggregateRating it claims would violate Google's structured-data guidelines (self-serving reviews on LocalBusiness are banned), so its absence in code is actually correct — the doc should be rewritten as an honest done/not-done ledger."
+      },
+      {
+        "title": "Adoption/foster applications are unstructured contact blobs that never reach the app's applications module",
+        "severity": "high",
+        "evidence": "adopt-apply.html lines 464–500 concatenate 11 structured fields (interest, experience, setup, other-animals, care, goals...) into SF.sendContact → POST /api/contact → Neon contactsTable (_worker.js line 14655). SB's src/stores/applications.js reads a Firestore 'applications' collection that nothing on the website writes to.",
+        "detail": "Beyond the ops pain, this kills conversion measurement and content strategy: you can't tie an application to a specific animal listing (no animal ID field), can't compute page→application conversion by species/breed to guide content investment, and can't publish 'X applications this month' style social proof."
+      },
+      {
+        "title": "Sitemap is stale, incomplete, and static while the animal inventory changes daily",
+        "severity": "medium",
+        "evidence": "sitemap.xml: 14 URLs, lastmod values of 2026-06-06/2026-07-01, missing names.html, privacy, terms, accessibility, and (necessarily) any animal URLs; animals entry declares changefreq=daily but the file is hand-edited. robots.txt is 4 lines with no Disallow for admin.html or /api/.",
+        "detail": "A Worker route (the Hono app is already there) should generate sitemap.xml dynamically from the animals table with real lastmod dates, and robots.txt should disallow /admin and /api/ paths (admin.html is currently crawlable and indexable)."
+      },
+      {
+        "title": "Impact stats are hard-coded lies-in-waiting instead of live data from SanctuaryBase",
+        "severity": "medium",
+        "evidence": "_worker.js line 14819: /api/stats returns yearsActive:14, animalsRescued:300, volunteers:22 as literals; index.html line 96 hard-codes 'Hundreds'. SB v2 has adoptions.js, outcomes.js, financeStats.js, feedingLogs.js stores full of real numbers.",
+        "detail": "Fresh, specific impact numbers ('87 animals adopted in 2026', '312,000 lbs of feed served') are E-E-A-T and conversion gold, and Google increasingly rewards freshness on nonprofit money pages. Static numbers rot and erode trust."
+      },
+      {
+        "title": "Schema quality bugs: malformed sameAs and a self-canonicalized 404 page",
+        "severity": "low",
+        "evidence": "animals.html line 35 schema includes \"donate.html\" (a relative page link) inside the sameAs array; 404.html line 9 sets rel=canonical to https://sfr-rescue.pages.dev/404.html.",
+        "detail": "sameAs must be absolute URLs of official profiles — a relative 'donate.html' fails validation and dilutes the entity signal. A 404 page should return 404 status with no canonical; canonicalizing it invites indexing of the error page."
+      },
+      {
+        "title": "Zero editorial/content engine: no blog, success stories, or events pages despite abundant source material",
+        "severity": "medium",
+        "evidence": "Site inventory (17 HTML pages) contains no /news, /stories, /events, or per-campaign pages; press.html is a static media kit; fundraiser.html is one page fed by auctionItemsTable. SB v2 holds outcomes.js, adoptions.js, announcements.js, auctionItems.js — all unpublished narrative material.",
+        "detail": "Rescue orgs win long-tail SEO with story content ('senior horse rehabilitation', 'how to foster a goat in Arizona') and Event schema for fundraisers. The site currently has nothing for Google to index between the 14 static pages — no freshness signal, no long-tail surface, no internal-linking targets."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "Server-render per-animal pages from the Worker with full schema and OG tags",
+        "impact": "transformative",
+        "detail": "The Hono app in _worker.js already owns routing and the Neon animals table — add a GET /animals/:id-:slug HTML route that server-renders the animal's profile (name, species, breed, age, story, photos) with unique <title>/meta/canonical/og:image (their actual photo, not opengraph.jpg) and JSON-LD (ItemPage + an offer-style listing; Google has no Animal type, but Product-like or CreativeWork markup plus BreadcrumbList works, and image/description feed image search). Keep the JS grid as the browse UI linking to real URLs instead of #animal-N hashes. This turns every rescue into a landing page and every adoption share into a rich social card. SanctuaryBase's WebsiteListingTab already controls publish state — no new editorial workflow needed."
+      },
+      {
+        "title": "Move to the brand custom domain and 301 pages.dev",
+        "impact": "transformative",
+        "detail": "Attach saintfrancisrescue.org (already referenced in the site's own UTM params) to the Cloudflare Pages project, bulk-update canonicals/og:url/schema/sitemap/robots (18 files, one find-replace), 301 sfr-rescue.pages.dev, re-verify in Google Search Console, and update Plausible data-domain. Do this before any content investment so new equity lands on the real domain."
+      },
+      {
+        "title": "Generate sitemap.xml and robots.txt dynamically from the database",
+        "impact": "major",
+        "detail": "Add Worker routes for /sitemap.xml (static pages + every published animal URL with real lastmod from createdAt/updatedAt, plus image:image tags for animal photos) and /robots.txt (Disallow: /admin, /api/). This makes the daily-changing animal inventory self-indexing and ends hand-maintained sitemap drift. Ping GSC on publish from the SB WebsiteListingTab flow."
+      },
+      {
+        "title": "New module: Success Stories / News publisher inside SanctuaryBase",
+        "impact": "transformative",
+        "detail": "Add a 'Stories' feature in SB (new Pinia store + editor page, mirroring the existing WebsiteListingTab publish pattern) that pushes posts to a new Neon `stories` table, with the Worker server-rendering /stories/:slug pages (Article schema, author=NGO, datePublished). Seed it from adoption outcomes (outcomes.js/adoptions.js) — 'From quarantine to couch: Bella's 8-month journey' — and reuse the existing 'Write with AI' bio generator (functions/api/generate-animal-bio.js) as a story-draft assistant. This is the freshness/long-tail engine the site completely lacks, and it internal-links to animal and donate pages."
+      },
+      {
+        "title": "Structured application pipeline: website forms → Firestore applications collection",
+        "impact": "major",
+        "detail": "Replace the flatten-to-contact hack: give the Worker a POST /api/applications endpoint that stores structured fields including an optional animalId (pre-filled when applying from a per-animal page), and have SB's applications store ingest them (either the site proxy pulls, or the Worker forwards to a Cloudflare function writing to Firestore via Admin SDK). Adds conversion tracking (SF.track already exists) so you can measure listing-page → application rate per species and steer content spend."
+      },
+      {
+        "title": "Live impact stats API fed by SanctuaryBase data",
+        "impact": "major",
+        "detail": "Replace the hard-coded /api/stats literals with numbers synced from SB (a scheduled function aggregating adoptions/outcomes/financeStats into a stats table or KV). Surface them on index.html (already wired via data-stat attributes) and in a new /impact page with year-by-year numbers — prime material for grant applications, press, and 'animal rescue statistics Yuma' queries. Add matching schema (e.g., NGO with quantified description) and keep numberOfEmployees:0 which is a great trust signal."
+      },
+      {
+        "title": "Event schema and event pages for fundraisers/auctions",
+        "impact": "nice-to-have",
+        "detail": "auctionItemsTable already has endsAt and the SB AuctionItemsPage manages items — add per-event pages (or enrich fundraiser.html) with schema.org/Event markup (name, startDate/endDate, location, organizer NGO) so fundraisers appear in Google's event surfaces and local 'things to do Yuma' queries. Publish upcoming events from SB's announcements store."
+      },
+      {
+        "title": "Schema and hygiene fix pass + rewrite SEO_IMPROVEMENTS.md as an honest ledger",
+        "impact": "nice-to-have",
+        "detail": "Fix animals.html sameAs (remove 'donate.html'), drop the canonical from 404.html, add BreadcrumbList to index.html or delete the claim, remove or implement the manifest cleanup, add og:locale, and rewrite SEO_IMPROVEMENTS.md to reflect only what ships (explicitly noting AggregateRating was intentionally NOT added because self-serving review markup violates Google guidelines). Add a Google Business Profile task — the doc mentions 'if created', and for local pack visibility it matters more than half the schema on the site."
+      }
+    ],
+    "strengths": [
+      "Genuinely strong on-page fundamentals across all 17 pages: unique keyword+location titles, 155-char meta descriptions, canonicals, full OG/Twitter card sets, and consistent NGO/AnimalShelter JSON-LD with taxID, nonprofitStatus, PO Box address, and sameAs social profiles (index.html line 31 is a model NGO schema block).",
+      "Valid FAQPage schema on faq.html (line 148) built from real on-page Q&A, and BreadcrumbList on nearly every subpage — legitimate rich-result eligibility.",
+      "DonateAction schema with EntryPoint and PriceSpecification on donate.html (line 104) — rare to see done at all, let alone correctly, on small nonprofit sites.",
+      "Excellent, story-driven copywriting with descriptive image alt text ('Kharma and her daughter Victoria, two rescued horses...') and strong local signals (Yuma, AZ woven naturally throughout).",
+      "Performance and accessibility foundations that protect Core Web Vitals: font/hero preloads with fetchpriority, webp images, skip links, noscript reveal fallback, semantic heading structure.",
+      "A working, security-conscious publish pipeline already exists between SanctuaryBase and the website (WebsiteListingTab.vue → /api/site Firebase-verified proxy → Worker admin routes, token never in browser) — the plumbing for dynamic SEO content is 70% built; it just needs crawlable output on the other end.",
+      "The AI bio writer (generate-animal-bio.js + 'Write with AI' in WebsiteListingTab) is an editorial force multiplier for a volunteer-run org with no content staff.",
+      "Privacy-friendly Plausible analytics with donate-click event tracking (SF.track in app.js) — conversion measurement scaffolding is already in place."
+    ]
+  },
+  {
+    "expert": "Whole Whale-style nonprofit analytics and digital strategy consultant — measurement, conversion tracking, and KPI/data strategy review",
+    "integration_assessment": "The two systems share operational data but almost no measurement data. The website runs Plausible (index.html:25, data-domain \"sfr-rescue.pages.dev\") plus a well-built custom event layer (SF.track in app.js:100-115) that fires \"Donate Click\", \"Newsletter Signup\", \"Sticky Bar Shown/Dismissed\", \"Exit Intent Shown\", \"Animal Shared\", and \"Name Suggested\". SanctuaryBase proxies into the site's Worker API server-side (SB functions/api/site/[[path]].js with SITE_ADMIN_TOKEN) to read/reply to contacts, view newsletter subscribers, and manage public animal/auction listings — a solid pattern. But the measurement chain breaks at every conversion point: (1) donations happen entirely off-site on Zeffy — the site only tracks click intent, and no Zeffy revenue ever flows into SanctuaryBase's ledger, financeStats, or donors collections; (2) adoption/foster/volunteer applications submit as generic contact-form rows (adopt-apply.html:495 → SF.sendContact → _worker.js POST /contact into a contacts table), while the app's ApplicationsPage reads a completely separate Firestore 'applications' collection that website submissions never touch — the pipeline UI is effectively decorative; (3) zero analytics events fire on successful application submission (grep confirms 0 SF.track calls in adopt-apply, foster-apply, volunteer-signup); (4) the public /stats endpoint hardcodes yearsActive:14, animalsRescued:300, volunteers:22 (_worker.js:14819-14832) even though the app has real volunteer and outcome data. The org can see traffic and clicks but is flying blind on revenue, donor retention, application funnels, cost per animal, and true impact numbers.",
+    "top_findings": [
+      {
+        "title": "Donation revenue is a measurement black hole",
+        "severity": "critical",
+        "evidence": "donate.html:156-670 (all CTAs link to zeffy.com with UTM params); app.js:107-115 tracks only 'Donate Click' intent and sets a sessionStorage flag that is never read for conversion matching; no Zeffy webhook/import anywhere in either codebase; SB- v2 ledger.js and donors.js have no external ingestion",
+        "detail": "Every donation path exits to Zeffy in a new tab. The site tracks the click but never the completion, so conversion rate, average gift, recurring-vs-one-time mix, and campaign ROI are all unknowable. Zeffy revenue also never reaches SanctuaryBase — the ledger, financeStats, and donor records are populated only by manual entry, so the org's actual income is invisible to its own management system."
+      },
+      {
+        "title": "Website applications never enter the app's application pipeline",
+        "severity": "critical",
+        "evidence": "adopt-apply.html:495 (SF.sendContact with subject:'adopt'), foster-apply.html and volunteer-signup.html:835 (fetch('/api/contact')); _worker.js:14655 stores these in the contacts table; SB- v2 src/stores/applications.js reads Firestore 'applications' collection; ApplicationsPage.vue:107-117 filters that Firestore data — website submissions never reach it",
+        "detail": "Structured multi-step application data (experience, setup, other animals, goals) is flattened into a generic contact message. The app's ApplicationsPage with Approve/Deny workflow operates on a disconnected Firestore collection that real applicants never populate. Result: no application funnel exists — submitted→reviewed→approved→adopted conversion rates, time-to-decision, and drop-off are unmeasurable, and staff triage applications as inbox messages."
+      },
+      {
+        "title": "Zero conversion events on the highest-value forms, and stale Plausible config",
+        "severity": "high",
+        "evidence": "grep count of SF.track: adopt-apply.html=0, foster-apply.html=0, volunteer-signup.html=0; successful-submit handlers fire no analytics event; index.html:25 data-domain='sfr-rescue.pages.dev' while canonical URLs moved to the live domain (commit ad897ac); SB App.vue:184-185 sends userId to Plausible",
+        "detail": "The custom event layer exists and works (Newsletter Signup fires at app.js:761), but adoption, foster, and volunteer application submissions — the site's primary conversions besides donations — emit no event, and multi-step form abandonment is untracked. Meanwhile the Plausible data-domain still points at the pages.dev host, so traffic on the production custom domain may be undercounted or split, and the internal app sends user identifiers as event props."
+      },
+      {
+        "title": "Two disconnected finance systems with seeded/derived metrics that are wrong",
+        "severity": "high",
+        "evidence": "SB- v2 src/stores/financeStats.js (collection 'financeStats', seeded via FINANCE_STATS_SETUP.md sample-data scripts) vs src/stores/ledger.js (collection 'ledgers'); FinanceStatsPage.vue:101-107 computes 'Active Donors' as unique description strings among only the 10 most recent transactions (financeStats.js:57-68 slices to 10)",
+        "detail": "Finance data lives in two parallel Firestore collections with no reconciliation, and the Finance Stats dashboard was bootstrapped from seed data. The 'Active Donors' KPI is derived from transaction description text of the last 10 rows — a meaningless number presented as a headline metric. Any board report built from this page would be wrong."
+      },
+      {
+        "title": "Donor CRM cannot answer a single retention question",
+        "severity": "high",
+        "evidence": "SB- v2 src/stores/donors.js is flat CRUD with no gift subcollection or aggregation; DonorsPage.vue:7 hardcodes StatCard 'This Year' to \"0\"; 'Send Thank You' and 'View History' buttons (DonorsPage.vue:66-69) have no click handlers; donor records reference totalDonations/lastDonation fields nothing computes",
+        "detail": "There is no gift-history model, so donor retention rate, LYBUNT/SYBUNT, upgrade/downgrade, and recurring-donor counts are structurally impossible. Donations are logged as donor attributes at entry time, disconnected from the ledger, and the acknowledgment workflow is dead UI."
+      },
+      {
+        "title": "Denying an application deletes the record, destroying funnel history",
+        "severity": "medium",
+        "evidence": "ApplicationsPage.vue:127-137 — denyVolunteer and denyAdoption both call store.deleteApplication(id)",
+        "detail": "Approval rate, denial reasons, and repeat-applicant detection are unmeasurable because the deny path is a hard delete. Outcomes should be status transitions ('denied' + reason + timestamp), never deletions."
+      },
+      {
+        "title": "Public impact numbers are hardcoded fiction while real data exists in the app",
+        "severity": "medium",
+        "evidence": "_worker.js:14819-14832 GET /stats returns yearsActive:14, animalsRescued:300, volunteers:22 as literals, and 'adoptedThisYear' filters on animal createdAt year rather than adoption date; SB- v2 has real volunteer counts (Dashboard.vue:211), clock-in hours (VolunteerHoursPage.vue), and outcomes (outcomes.js)",
+        "detail": "The homepage impact strip is powered by constants, and the one live query is wrong for any animal adopted in a later year than intake. Donors are shown numbers no one can stand behind."
+      },
+      {
+        "title": "Outcome/LRR metrics are copy-pasted shelter boilerplate that doesn't fit the org",
+        "severity": "medium",
+        "evidence": "OutcomesPage.vue:127-129 computes dogsLRR and catsLRR for a farm-animal/reptile sanctuary (donate.html:103 schema.org describes a 'farm animal rescue and sanctuary'); outcomes store is separate from animals status transitions with no automatic linkage",
+        "detail": "Live Release Rate hardcodes Dogs and Cats species splits irrelevant to this sanctuary's population, and outcomes are manually entered rather than derived from animal status changes — length-of-stay and adoption-rate metrics can silently diverge from animal records."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "Close the donation loop: Zeffy ingestion into ledger + donors",
+        "impact": "transformative",
+        "detail": "Add a donation-ingestion module in SanctuaryBase: a Cloudflare function receiving Zeffy webhooks (or scheduled CSV import) that writes each gift to a canonical 'gifts' collection linked to a donor record (matched by email), and rolls up into the ledger as income with source/campaign tags carried from the UTM parameters already present on every donate link. Redirect Zeffy back to a /thank-you page on the site that fires a 'Donation Completed' Plausible goal with amount, closing the click→completion funnel that app.js currently abandons at 'Donate Click'."
+      },
+      {
+        "title": "Structured applications API feeding the app's real pipeline",
+        "impact": "transformative",
+        "detail": "Replace the SF.sendContact shim on adopt-apply/foster-apply/volunteer-signup with a POST /api/applications endpoint in _worker.js that preserves the structured fields, then sync into the Firestore 'applications' collection that ApplicationsPage already consumes (reuse the existing token-protected proxy pattern). Record status transitions (submitted/contacted/approved/denied/completed) with timestamps and reasons — and change deny from delete to status update — so approval rate, time-to-decision, and animal-level demand become reportable."
+      },
+      {
+        "title": "Nonprofit KPI dashboard module (board-ready Reports hub)",
+        "impact": "transformative",
+        "detail": "Build a Reports hub in SanctuaryBase computing from canonical data: donor retention rate and LYBUNT/SYBUNT (from gifts), monthly recurring donor count, average gift and gifts-per-donor; cost per animal per month (ledger expenses ÷ animal-days by species using intake/outcome dates); adoption rate and average length of stay (from status transitions); volunteer hours and 90-day volunteer retention (clockIn data already powers VolunteerHoursPage); application funnel conversion; newsletter list growth by source (source field already captured). Add month-over-month trends and CSV export for board packets and grant applications."
+      },
+      {
+        "title": "Unify finance: retire financeStats as a stored collection",
+        "impact": "major",
+        "detail": "Merge the parallel 'financeStats' and 'ledgers' Firestore collections into one ledger source of truth (financeStats is seeded sample data per FINANCE_STATS_SETUP.md), and rewrite FinanceStatsPage's categories/donor counts as an analytics layer over the full ledger — fixing the 'Active Donors from last 10 transaction descriptions' bug. Tag every income row with donorId, source (zeffy/auction/in-kind/grant), and campaign."
+      },
+      {
+        "title": "Fix analytics plumbing and event taxonomy",
+        "impact": "major",
+        "detail": "Update the Plausible data-domain to the live production domain (still 'sfr-rescue.pages.dev' at index.html:25), define Plausible goals for Donation Completed, Application Submitted (by type), and Newsletter Signup, add SF.track calls in the success handlers of the three application forms plus step-abandonment events for the multi-step forms (step state already exists client-side). In the app, drop userId/animalName props from Plausible events."
+      },
+      {
+        "title": "Attribution capture on every inbound record",
+        "impact": "major",
+        "detail": "Store utm_source/medium/campaign, referrer, and landing page on contact, application, and newsletter rows at submission time in _worker.js (the newsletter table already has a 'source' column — extend that pattern). This is the only way to answer 'which channel produces adopters and donors, not just visitors' and to justify social/ad effort."
+      },
+      {
+        "title": "Make public impact numbers live",
+        "impact": "nice-to-have",
+        "detail": "Replace the hardcoded /stats constants in _worker.js with real values: volunteer count and hours synced nightly from SanctuaryBase, adoptions-this-year computed from outcome dates (not animal createdAt year), and a maintained lifetime-rescues counter. Honest, moving numbers outperform static claims on donation pages."
+      },
+      {
+        "title": "Sanctuary-appropriate outcome metrics",
+        "impact": "nice-to-have",
+        "detail": "Rework OutcomesPage to compute LRR and length-of-stay per actual species in the population (goats, horses, reptiles — not hardcoded dogs/cats), derive outcomes automatically from animal status transitions instead of manual entry, and track permanent sanctuary residents separately from adoptable animals so adoption-rate denominators are correct."
+      }
+    ],
+    "strengths": [
+      "The SF.track abstraction (app.js:100-115) is genuinely good: provider-agnostic (Plausible with gtag fallback), fail-safe try/catch, and an intentional event taxonomy (Donate Click with location+target, Sticky Bar, Exit Intent, Animal Shared) — a solid foundation to extend rather than replace.",
+      "Consistent UTM discipline: every Zeffy donate link carries utm_source/medium/campaign, with utm_content variants distinguishing exit-intent and impact-slider placements (donate.html:156,444,670) — the attribution inputs exist even though nothing consumes them yet.",
+      "The server-side proxy pattern (SB- v2 functions/api/site/[[path]].js) is well designed: Firebase role verified server-side, site admin token never exposed to the browser, role-scoped path allowances — the right chassis for deeper bidirectional data flow.",
+      "Real operational telemetry already exists in the app: clock-in-based volunteer hours with per-volunteer trends and period filters (VolunteerHoursPage.vue), fed-today coverage and compliance-overdue metrics on the Dashboard (Dashboard.vue:224-253) — honest, computed-from-source metrics worth building the KPI layer on.",
+      "Newsletter capture is properly centralized (POST /api/newsletter with dedupe and a source field, _worker.js:14676) and surfaced read-only in the app via newsletterService — a working, if minimal, website→app data flow to use as the template.",
+      "Documentation culture in SB- v2 (ARCHITECTURE.md, CODEBASE_MAP.md, setup guides) and the uniform store-per-domain Pinia pattern make the revamp tractable — a reporting layer can be added without restructuring."
+    ]
+  },
+  {
+    "expert": "Intopia-style digital accessibility strategist (disability-led WCAG 2.2 AA compliance review of the public website)",
+    "integration_assessment": "The two systems connect through a thin, admin-only proxy: SanctuaryBase's Cloudflare function (SB- v2/functions/api/site/[[path]].js) verifies Firebase role server-side and forwards to the website Worker's /api/admin/* routes (animals, auction items, contacts), with siteApi.js/contactsService.js on the Vue side. Public-facing flow is one-directional and lossy from an accessibility standpoint: adoption and foster applications on the website are submitted as generic contact messages (adopt-apply.html posts to SF.sendContact with subject:\"adopt\"), so they arrive in SanctuaryBase's contact inbox rather than its structured applications store (src/stores/applications.js), and applicants get no accessible status tracking afterward. Animal listings flow website→app for admin editing, but there is no alt-text requirement in that pipeline — the accessibility statement itself admits volunteer-uploaded photos \"may occasionally be brief or generic,\" and the animalCard renderer (app.js:127-144) falls back to just the animal's name as alt. The website has had a genuine accessibility investment pass (skip links, live regions, focus-visible rings, reduced motion); the newer conversion-focused additions (multi-step forms, quick-interest widgets, exit-intent modal, clickable div cards) were bolted on without the same rigor and are where most WCAG failures now live.",
+    "top_findings": [
+      {
+        "title": "Mouse-only custom controls: clickable divs with no keyboard access (WCAG 2.1.1)",
+        "severity": "critical",
+        "evidence": "adopt-apply.html:402 (animal grid cards rendered as <div ... onclick=\"alert(...)\"> with no tabindex/role/keydown); app.js:444-457 (volunteer page .time-option divs get only click listeners, no tabindex or key handling); volunteer.html time-commitment selector injected by same code",
+        "detail": "The 'available for adoption' grid on the adoption application page and the volunteer time-commitment selector are completely unreachable and inoperable by keyboard and invisible as controls to screen readers. The adopt grid additionally uses alert() to convey the animal description, which is a jarring, unstructured experience. This directly blocks disabled users on the two highest-value conversion pages. Contrast with the shared animalCard() renderer (app.js:118-144) which correctly adds tabindex=0 and Enter/Space activation — the pattern exists in the codebase but was not used here."
+      },
+      {
+        "title": "Multi-step adopt/foster forms fail error identification: the .error class has no CSS and no ARIA (WCAG 3.3.1, 4.1.3)",
+        "severity": "high",
+        "evidence": "adopt-apply.html:429-441 (validateStep adds/removes class 'error' only); grep of styles.css shows no .error rule exists, only .field.invalid (styles.css:986-992) which this code never sets; foster-apply.html uses the identical pattern; step counter/progress bar (adopt-apply.html:144-152) is bare divs with no role=progressbar or announcement on step change",
+        "detail": "When a user hits 'Next' with empty required fields, invalid fields receive a class that styles nothing, sets no aria-invalid, no aria-describedby, and no per-field message; the only feedback is a generic status line ('Please fill in all required fields before continuing') that is not focused. Screen-reader and low-vision users cannot locate which field failed. Step changes (display:none toggling) are also unannounced, so a screen-reader user does not know they moved from Step 1 to Step 2. The site's own contact form has a proper inline-validation engine (app.js initInlineValidation, lines 484-539, with role=alert field errors) that is wired only to #contact-form."
+      },
+      {
+        "title": "Unassociated labels on all three 'quick interest' pre-forms (WCAG 1.3.1, 3.3.2, 4.1.2)",
+        "severity": "high",
+        "evidence": "adopt-apply.html:109-129 (<label style=...>What type of animal interests you?</label> followed by <input id=\"qi-interest\"> — no for attribute, not wrapping); foster-apply.html:109-122 and volunteer-signup.html:148,160 repeat the same pattern",
+        "detail": "Every field in the quick-interest widgets on adopt-apply, foster-apply, and volunteer-signup has a visually adjacent but programmatically orphaned label. Screen readers announce these inputs and selects with no accessible name at all. Also affected: the radio groups 'Will you have other animals around?' (adopt-apply.html:195-200) and 'What's your living situation?' (foster-apply.html:173-178) use a bare <label> as a group caption with no fieldset/legend and no association, so the group question is never announced with the radio options."
+      },
+      {
+        "title": "Monthly/one-time donation toggle has no accessible name (WCAG 4.1.2, 1.3.1)",
+        "severity": "high",
+        "evidence": "donate.html:224-232 — <input type=\"checkbox\" id=\"monthlyToggle\"> inside <label class=\"switch\"> whose only content is an empty <span class=\"slider\">; the 'One-time'/'Monthly' text spans are siblings outside the label",
+        "detail": "The frequency switch on the primary donation card is announced as an unnamed checkbox with no indication it controls one-time vs. monthly giving, and its state ('12x impact') is conveyed only by visual label opacity (.toggle-label.active, opacity 0.8 vs 1 — also a contrast/state-by-color-only concern). A screen-reader donor cannot tell what they are toggling on the most important form on the site. Positive nearby: the range slider has an sr-only label (donate.html:211) and the impact box is aria-live=polite (donate.html:219)."
+      },
+      {
+        "title": "Exit-intent overlay declares aria-modal=\"true\" but does not trap focus (WCAG 2.4.3, 1.3.1)",
+        "severity": "medium",
+        "evidence": "index.html:420-431 (role=\"dialog\" aria-modal=\"true\") and inline script index.html:479-497 — only Escape handling and initial focus to the close button; no Tab containment, unlike the animal modal which has a real trap (app.js:542-584)",
+        "detail": "When the mouseleave-triggered donation dialog opens, Tab moves focus into the page behind it while ARIA tells screen readers the rest of the page is inert — a direct contradiction that strands users. It also appears unprompted on mouse movement, interrupting task flow. The codebase already contains a correct focus-trap implementation for the animal detail modal; it just isn't applied here."
+      },
+      {
+        "title": "Gold focus indicator fails non-text contrast on light backgrounds (WCAG 1.4.11 / 2.4.13-adjacent)",
+        "severity": "medium",
+        "evidence": "styles.css:964-968 (:focus { outline:none } then :focus-visible { outline: 3px solid var(--gold) }) and styles.css:1291; --gold is #c9a24b (styles.css:61), page backgrounds --cream #fbf8f1 / --bone #f4efe6",
+        "detail": "The sitewide keyboard focus ring is #c9a24b gold, which measures roughly 2.1-2.3:1 against the cream/bone backgrounds used on nearly every section — below the 3:1 minimum for focus indicators. Because :focus outlines are globally suppressed, this under-contrast ring is the only focus indication low-vision keyboard users get on buttons, cards, chips, and links across the site. On the dark pine sections the same gold passes comfortably, so a two-token approach is needed."
+      },
+      {
+        "title": "Desktop nav dropdown: aria-expanded never updates and is hover/focus-within only (WCAG 4.1.2)",
+        "severity": "medium",
+        "evidence": "app.js:176-197 — aria-expanded synced via MutationObserver watching the .open class, but on desktop the menu opens purely via CSS :hover / :focus-within (styles.css:223) so the class never changes; click on desktop navigates to about.html instead of toggling; chevron SVG at index.html:54 lacks aria-hidden",
+        "detail": "Screen-reader users are told the 'Our Story' disclosure is permanently collapsed even while the submenu is open, and touch/screen-reader users who 'click' the toggle are navigated away rather than shown the menu (Ways to Help, Corporate Giving, Press, FAQ). The mobile code path is correct; the desktop path relies entirely on CSS state that ARIA cannot see. Note accessibility.html:58-63 also has a divergent copy of this submenu (missing Ways to Help), showing header markup is drifting across the 20+ page copies."
+      },
+      {
+        "title": "Accessibility statement is stale, targets WCAG 2.1, and lacks a working email contact",
+        "severity": "low",
+        "evidence": "accessibility.html:121 ('We aim to meet ... WCAG 2.1 Level AA'); accessibility.html:127 says 'send us an email' but provides no address; duplicate <h1> at accessibility.html:80 and accessibility.html:101; 'Last updated: June 2026'",
+        "detail": "The statement predates WCAG 2.2 (relevant new AA criteria like 2.4.11 Focus Not Obscured, 2.5.8 Target Size, 3.3.8 Accessible Authentication apply to this site's sticky bars and admin login). It invites email feedback without giving an email, and the page renders two h1 elements with near-identical text. As the public conformance claim, this should be the easiest thing to get right — and it currently overstates conformance given the form findings above."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "Replace the adopt/foster multi-step forms with the volunteer-signup form engine",
+        "impact": "transformative",
+        "detail": "volunteer-signup.html (lines ~360-560) is the best-built form in the ecosystem: real fieldset/legend per step, for/id labels, aria-required, aria-invalid, role=alert errors, aria-pressed pill buttons, autocomplete tokens, reduced-motion handling — and it even asks applicants about accessibility accommodations. Generalize that renderer into a shared, schema-driven form module (steps defined as JSON) and use it for adopt-apply.html and foster-apply.html, deleting their broken bespoke step logic. This fixes findings 2 and 3 wholesale and gives SanctuaryBase a single form schema it can also render for in-person/kiosk intake."
+      },
+      {
+        "title": "Make website applications first-class records in SanctuaryBase, not contact-inbox messages",
+        "impact": "transformative",
+        "detail": "Add typed Worker endpoints (POST /api/applications/adopt|foster|volunteer) that the forms submit to, and sync them into SanctuaryBase's existing applications store (SB- v2/src/stores/applications.js) via the site proxy — including the animal ID when an applicant clicked a specific animal card. Then close the loop with an accessible applicant status page or email updates ('received → phone call → meet-and-greet'), replacing today's dead-end where the only confirmation is an innerHTML blob (adopt-apply.html:499-501). Structured data also lets SanctuaryBase's people/donors/contacts modules dedupe applicants against existing volunteers and donors."
+      },
+      {
+        "title": "Add an alt-text and accessibility gate to the animal publishing pipeline",
+        "impact": "major",
+        "detail": "The website's known weakest content is volunteer-uploaded animal photos (admitted in accessibility.html:124). In SanctuaryBase's animalsAdmin flow (SB- v2/src/stores/animalsAdmin.js → site proxy → /admin/animals in _worker.js), make a descriptive alt-text field required before an animal can be set to 'available', with guidance text ('describe what the animal looks like and is doing'). Store it in the animal record and render it in animalCard() (app.js:136) instead of falling back to the bare name. This turns the internal app into the enforcement point for public-site accessibility — exactly the 'front door' relationship the revamp envisions."
+      },
+      {
+        "title": "Fix the four code-level WCAG failures on the money pages",
+        "impact": "major",
+        "detail": "(1) Name the monthly toggle: wrap it as <label>Monthly giving<input...></label> or add aria-label plus aria-checked switch role, and reflect state in text, donate.html:224-232. (2) Give the exit-intent overlay the same focus trap as the animal modal (reuse app.js:571-583) or replace it with a non-modal banner. (3) Make the adopt-page animal grid and volunteer time-selector real buttons/links with keyboard support (adopt-apply.html:402, app.js:444-457). (4) Wire initInlineValidation to all forms, not just #contact-form (app.js:485)."
+      },
+      {
+        "title": "Introduce a dual-tone focus indicator token and re-audit contrast",
+        "impact": "major",
+        "detail": "Define --focus-ring-on-light (e.g. the existing --pine #1f3a2e or --clay #b5623a, both >3:1 on cream/bone) and keep gold for dark pine sections; apply via section-tone classes. While in styles.css, also check the dark-mode palette block (styles.css:~810+) which remaps --cream/--ink and has never been contrast-verified, and the .toggle-label active/inactive opacity states on donate.html."
+      },
+      {
+        "title": "Templatize the shared header/footer to stop accessibility drift",
+        "impact": "major",
+        "detail": "Twenty-plus HTML pages each carry a hand-copied header, dropdown, newsletter strip, and footer; they are already diverging (accessibility.html's submenu differs from index.html's; donate.html's <main> lacks the tabindex=\"-1\" other pages have at line 72 of index.html). Move to build-time includes (even a simple 11ty/scripts step before Pages deploy) so one fix — e.g. the dropdown aria-expanded repair — lands everywhere at once. This is the single cheapest way to keep the site auditable as it grows."
+      },
+      {
+        "title": "Update the accessibility statement to WCAG 2.2 AA with a real feedback channel",
+        "impact": "nice-to-have",
+        "detail": "Revise accessibility.html: target WCAG 2.2 AA, list the actual known issues from this review (transparency builds trust), add a monitored email address (admin@ or a dedicated accessibility@ alias via the site's Cloudflare email routing), remove the duplicate h1 (lines 80/101), and date-stamp reviews. Consider routing accessibility feedback into SanctuaryBase's contacts inbox with a dedicated subject tag so it is triaged like other operational work."
+      },
+      {
+        "title": "Extend the audit to SanctuaryBase itself before the revamp",
+        "impact": "nice-to-have",
+        "detail": "This review covered the public website; the internal Vue app (SB- v2, ~40 stores, admin/features components) is a daily work tool for volunteers — including, per the volunteer form's own accommodation question, volunteers with disabilities. Before rebuilding it into the all-in-one platform, audit its DESIGN_SYSTEM.md tokens for contrast, its form components for label/error semantics, and its data tables and clock-in/rounds flows for keyboard operability, so the powerhouse is not built on the same gaps found here."
+      }
+    ],
+    "strengths": [
+      "Skip link on every page with a correctly focusable target (<main id=\"main-content\" tabindex=\"-1\">, index.html:39,72) and a well-styled :focus reveal (styles.css:796-808)",
+      "A shared screen-reader live region with SF.announce()/SF.toast() (app.js:67-98) actually used by the newsletter and name-suggestion flows — rare to see in a hand-built static site",
+      "Proper focus trap and focus-return implementation for the animal detail modal (app.js:541-584), a pattern ready to be reused for the exit-intent dialog",
+      "volunteer-signup.html's JS form engine is genuinely excellent: fieldsets/legends per step, aria-invalid, role=alert errors, aria-pressed pills, autocomplete tokens — and it proactively asks applicants about accessibility accommodations",
+      "Extensive prefers-reduced-motion coverage (15+ media blocks in styles.css; count-up override in app.js:474-481; noscript reveal fallback in every <head>)",
+      "Consistent decorative-SVG hygiene (aria-hidden=\"true\" on nearly all inline icons), labeled icon-only buttons (nav-toggle with aria-expanded/aria-controls, carousel prev/next, share buttons), and footer links underlined on hover/focus so they aren't color-only (styles.css:1432-1434)",
+      "Honeypot spam protection (adopt-apply.html:156) instead of a CAPTCHA — avoids the WCAG 3.3.8 accessible-authentication trap entirely",
+      "Server-side role-verified admin proxy (SB- v2/functions/api/site/[[path]].js) keeps the public site free of any admin UI, so the public surface stays simple and auditable"
+    ]
+  },
+  {
+    "expert": "Knowbility-style nonprofit accessibility auditor (WCAG 2.2 AA lens, screen reader + keyboard + mobile field-use focus)",
+    "integration_assessment": "The two systems are partially connected, one-directionally. The app publishes animal records to the website's Neon-backed listings via src/stores/animalsAdmin.js and services/animalsAdminService (each internal animal tracks a siteAnimalId; importFromSite() reconciles pre-existing site animals), and the website's app.js explicitly notes \"all admin operations... are performed through the SanctuaryBase app, which proxies to this site's /api/admin/* routes.\" However, the inbound flows are broken: the website stores adoption/foster/volunteer applications, donations, and newsletter signups in its own Postgres database via _worker.js, while the app's applications store (src/stores/applications.js) reads a completely separate Firestore 'applications' collection — public applicants never appear in SanctuaryBase without manual re-entry, and the donors store has no link to website donation records. From an accessibility standpoint this split matters: applicant-facing status communication happens in neither system, and staff processing applications must juggle two UIs (admin.html and the app) with two different, inconsistent accessibility postures.",
+    "top_findings": [
+      {
+        "title": "Keyboard focus indicator removed on every button in the app",
+        "severity": "critical",
+        "evidence": "src/components/ui/AppButton.vue line 42 (`outline: none` on .app-btn with no :focus or :focus-visible rule); src/style.css lines 377 and 762 (`outline: none` on .btn and inputs); a grep for `focus-visible` across src/ returns zero hits in any component or stylesheet",
+        "detail": "AppButton is the primitive used by nearly every page (AnimalDetail.vue, admin pages, modals), and it strips the browser outline without replacing it. Inputs get a focus box-shadow (style.css line 775, AppInput.vue line 128), but buttons, nav tabs, and the MoreDrawer feature buttons give a sighted keyboard user no indication of where focus is. This is a WCAG 2.4.7 failure across the entire app — keyboard-only staff and volunteers effectively cannot operate it. Ironically the token already exists: --shadow-focus is defined in design-tokens.css line 200 but never applied to a button."
+      },
+      {
+        "title": "No modal in the app has dialog semantics, a focus trap, or Escape handling",
+        "severity": "critical",
+        "evidence": "src/components/shared/ConfirmDialog.vue (plain divs, no role=dialog/aria-modal, no focus move on open, no keydown handler, no focus return); src/components/features/modals/DietModal.vue; the inline edit modal in src/components/features/AnimalDetail.vue lines 28-60; ~20 more position:fixed overlays across features/admin (GrantDetailModal.vue, PersonDetailDrawer.vue, DeleteMessageDialog.vue, etc.), none with keyboard handlers per grep of @keydown",
+        "detail": "When ConfirmDialog opens (used for every destructive action via ui.confirm()), keyboard focus stays on the page behind it; a screen reader user is never told a dialog opened, can tab into obscured background content, and cannot dismiss with Escape. The overlay's only dismissal besides the buttons is @click.self — mouse-only. Because every modal in the app is hand-rolled with the same divs, this is a systemic WCAG 2.4.3 / 4.1.2 failure, not a one-off."
+      },
+      {
+        "title": "Toast notifications — the app's sole feedback channel — are invisible to screen readers",
+        "severity": "high",
+        "evidence": "src/components/shared/Toast.vue: the toast div has no aria-live, role=status, or role=alert; src/stores/ui.js showToast() (line 36) is the app-wide pattern for success AND error reporting per ARCHITECTURE.md's own component examples ('ui.showToast(\"Error: \" + error.message, \"error\")')",
+        "detail": "Every save, delete, and failure in the app is communicated exclusively through this transient visual toast. A screen reader user who submits a feeding log, marks meds given, or hits a Firestore error receives zero announcement — they cannot tell whether their action succeeded. WCAG 4.1.3 (Status Messages) failure with high operational risk in a medical/animal-care context where a silently failed 'meds given' save has real consequences."
+      },
+      {
+        "title": "AppInput/AppSelect labels are not programmatically associated; clear button is mouse-only",
+        "severity": "high",
+        "evidence": "src/components/ui/AppInput.vue lines 3-6 (label element with no `for`, input with no `id`), line 34 (clearable control is a div with @click only — no button role, no aria-label, no keyboard handler), lines 44-45 (error/hint divs not linked via aria-describedby, no aria-invalid); src/components/ui/AppSelect.vue lines 3-13 (same unassociated label; placeholder option uses hardcoded `selected` attribute alongside :value binding)",
+        "detail": "These two primitives back essentially every form in the app (DietModal, AnimalDetail edit modal, all admin pages). Screen readers announce each field as an unlabeled 'edit text', and validation errors render visually but are never announced or associated with the field (WCAG 1.3.1, 3.3.2, 4.1.2). Many callers make it worse by wrapping AppInput in their own bare `<label class=\"form-label\">` (DietModal.vue lines 13-17), which still associates with nothing."
+      },
+      {
+        "title": "Tab-based faux routing gives screen reader users no navigation feedback at all",
+        "severity": "high",
+        "evidence": "src/App.vue line 18 (`<component :is=\"routeMap[ui.currentTab]\" />` swaps entire pages with no focus management, no document.title change, no announcement); src/components/layout/BottomNav.vue (nav buttons carry no aria-current/aria-selected; active state is color-only via .nav-tab.active in style.css line 337); AnimalDetail's 11 sub-tabs and the ARCHITECTURE.md tab pattern use plain buttons with an .active class — grep shows zero role=\"tab\"/tablist/aria-selected anywhere in src/",
+        "detail": "The app deliberately avoids a router (ARCHITECTURE.md 'Tab-Based Navigation'), so activating a nav item silently replaces the whole view: focus stays on the clicked button, the page title never changes, and nothing is announced. A screen reader user pressing 'Animals' gets no confirmation the view changed (WCAG 4.1.2, 2.4.2). The color-only active state also fails 1.4.1 for low-vision users."
+      },
+      {
+        "title": "Icon-only controls lack accessible names; decorative emoji are announced as content",
+        "severity": "medium",
+        "evidence": "src/components/layout/MoreDrawer.vue line 14 (close button content is bare '✕', no aria-label); src/components/layout/Header.vue lines 16-38 (icon buttons rely on title attribute only); BottomNav.vue lines 31-52 and MoreDrawer sections use emoji icons (🏠 🐾 🩺 💊) without aria-hidden — grep shows aria-hidden appears exactly once in the entire components tree (TasksPage.vue line 56); the inbox unread nav-badge is a bare visual span",
+        "detail": "Screen readers announce '✕' as 'multiplication X' and read every emoji's Unicode name before each nav label ('dog paw prints, Animals'), creating constant noise in the app's primary navigation. Header controls named only by title are unreliable on touch and for many AT combinations."
+      },
+      {
+        "title": "Touch targets and text sizes below field-use thresholds in core mobile surfaces",
+        "severity": "medium",
+        "evidence": "src/components/layout/MoreDrawer.vue: 4-column grid (line 168) with feature-btn padding 10px 6px and 9px uppercase labels (line 193), section labels 10px (line 158); src/style.css line 767 checkboxes/radios fixed at 16px; drawer close button padding 4px 6px (~24px target); Toast.vue white-space:nowrap risks clipping long error messages; base font token is 13px with --font-size-xs at 11px used for nav labels",
+        "detail": "This app is explicitly used by volunteers doing rounds, feeding, and med runs on phones — often outdoors, one-handed, possibly gloved. 16px checkboxes, ~24px close buttons, and 9-10px uppercase text fall well short of the 44x44px / legible-text bar (WCAG 2.5.8 and mobile best practice). Credit where due: AppInput and AppSelect do enforce min-height 44px."
+      },
+      {
+        "title": "Light-theme mint token likely fails contrast where used as text/active indicator",
+        "severity": "medium",
+        "evidence": "src/design-tokens.css line 260: light-mode --color-mint is #0FA87D on white/near-white surfaces (#FFFFFF, #F4F1FF); used as text color for active nav tabs (style.css line 338) and MoreDrawer section labels (mint at 10px)",
+        "detail": "#0FA87D on #FFFFFF is roughly 2.9:1 — below the 4.5:1 requirement for the small (10-12px) text it colors. The dark theme is generally strong (white-on-#1A1033 text scale computes comfortably above AA), and the tokens file claims 'WCAG AA+ contrast ratios', but the light-mode mint and the 0.64-alpha tertiary text at 11px sizes deserve a measured audit pass."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "Fix the four primitives and inherit accessibility everywhere",
+        "impact": "transformative",
+        "detail": "Because the app funnels through a tiny set of primitives, four targeted retrofits fix hundreds of screens at once: (1) AppButton — replace outline:none with a :focus-visible rule using the existing --shadow-focus token, add aria-busy when loading; (2) AppInput/AppSelect — generate a unique id, wire label[for], add aria-invalid and aria-describedby to error/hint, convert the clearable div to a real <button aria-label=\"Clear\">; (3) Toast.vue — add role=\"status\" aria-live=\"polite\" (assertive/role=alert for error type) and drop white-space:nowrap; (4) ConfirmDialog — role=\"dialog\" aria-modal, focus the confirm button on open, trap Tab, handle Escape, return focus on close. This is days of work, not months, and should precede any powerhouse feature expansion."
+      },
+      {
+        "title": "Build one AppModal/AppDrawer component and migrate the ~20 hand-rolled overlays",
+        "impact": "transformative",
+        "detail": "Create a shared AppModal (and AppDrawer for MoreDrawer/PersonDetailDrawer) with dialog semantics, focus trap, Escape, scroll lock, and labelled-by wiring, then migrate DietModal, AnimalDetail's inline edit/post/card modals, GrantDetailModal, DeleteMessageDialog, PeopleFilterPanel, QuarantinePage overlays, etc. Add this to NEW_FEATURE_CHECKLIST.md so every new powerhouse module (fundraising, compliance, comms) gets accessible dialogs for free instead of copy-pasting the current broken pattern."
+      },
+      {
+        "title": "Adopt a real router (or add navigation announcements) before the app grows further",
+        "impact": "major",
+        "detail": "The ui.currentTab system already strains at ~40 stores and 30+ admin pages, and it is the root cause of the silent-navigation failure. Moving to vue-router gives URLs, back-button support, deep links from website-originated emails ('view application #123'), and a natural hook for focus management and document.title updates. If a router is too disruptive, minimally: on tab change set document.title, move focus to the new page's h1 (tabindex=\"-1\"), announce via a live region, and add aria-current=\"page\" to BottomNav plus proper role=tablist/tab/tabpanel + arrow-key support to AnimalDetail's 11 sub-tabs."
+      },
+      {
+        "title": "Field-use pass: touch targets, text size, and glove/sunlight ergonomics",
+        "impact": "major",
+        "detail": "For the volunteers doing rounds/feeding/med-runs on phones: enforce 44px minimum targets (MoreDrawer grid to 3 columns with taller cells, checkboxes/radios to 24px+ with padded labels, drawer close to 44px), raise the 9-11px uppercase micro-text to 12px+ minimum, verify light-theme mint (#0FA87D) against its actual surfaces and darken to ~#0A8A65 where used as text, and audit the amber/coral toast backgrounds. This directly serves the powerhouse goal — data quality in feeding/med logs depends on staff being able to hit the right control outdoors."
+      },
+      {
+        "title": "Unify the application pipeline and make it accessible end-to-end",
+        "impact": "major",
+        "detail": "Pipe website adoption/foster/volunteer submissions (currently landing only in the website's Postgres via _worker.js) into the app's applications store the same way animals already sync via animalsAdmin.js — either a webhook writing to Firestore or extending the existing /api/admin proxy pattern. Then build a single Applications module in SanctuaryBase with an accessible review queue (proper table semantics, status announced via live region) and applicant status-notification emails. Right now an applicant with a disability who completes the public form gets no confirmation surface in either system, and staff re-key data between two UIs."
+      },
+      {
+        "title": "Add an app-wide live-region + loading-state service to the ui store",
+        "impact": "major",
+        "detail": "Extend src/stores/ui.js with an announce(message, politeness) action backed by a persistent visually-hidden live region in App.vue, and use it for: navigation changes, list filter results ('12 animals shown'), async load completion (SkeletonLoader currently swaps content silently — add aria-busy on containers), and Firestore real-time updates that mutate visible lists. As dashboards and finance stats grow, this is the difference between a powerhouse that works with a screen reader and one that is a silent wall of updating widgets."
+      },
+      {
+        "title": "Wire accessibility into CI and the feature checklist",
+        "impact": "nice-to-have",
+        "detail": "Add eslint-plugin-vuejs-accessibility to the lint step (it would have caught the unassociated labels and click-only divs), an axe-core smoke test against the key pages in Vitest, and an 'Accessibility' section in NEW_FEATURE_CHECKLIST.md (labels associated, focus visible, dialog trapped, status announced, 44px targets). Also update DESIGN_SYSTEM.md's 'WCAG AA+' claim to reflect measured ratios per token pair per theme."
+      }
+    ],
+    "strengths": [
+      "AppInput and AppSelect enforce min-height: 44px, meeting touch-target guidance for the app's most-used form controls (src/components/ui/AppInput.vue line 105, AppSelect.vue line 80)",
+      "prefers-reduced-motion media queries already exist in style.css (line 1022) and in AlertBox, AppCard, EmptyState, and StatCard — motion sensitivity was considered",
+      "AlertBox.vue ships with role=\"alert\", and the auth flow (VolunteerSignup.vue, WelcomeScreen.vue) uses role=\"alert\" on error banners plus a dynamic aria-label on the password-visibility toggle — the newest components show growing awareness",
+      "A genuine token system (design-tokens.css) with semantic text tiers, a defined --shadow-focus token, and full light/dark theme support means contrast and focus fixes are cheap: change tokens once, inherit everywhere",
+      "BottomNav uses a semantic <nav> element with real <button>s (not divs), and visible text labels accompany every icon in primary navigation",
+      "The animals app-to-website sync (animalsAdmin.js + WebsiteListingTab, with siteAnimalId linking and importFromSite reconciliation) is a well-designed integration pattern worth extending to applications and donations rather than replacing"
+    ]
+  },
+  {
+    "expert": "Donorbox-style fundraising specialist (high-converting nonprofit donation experiences and donor management)",
+    "integration_assessment": "The website and app connect for content and inbox, but NOT for money or donors. The website (donate.html, fundraiser.html, corporate.html) is a well-crafted persuasion layer whose every donation CTA is an outbound link to a single Zeffy hosted form (\"animals-deserve-second-chances\", with UTM params). No donation ever touches the site's own backend: _worker.js (Hono + Neon/Drizzle, functions/api/[[path]].ts bundled at ~line 14537) has tables only for animals, contacts, auction_items, suggestions, and newsletter_subscribers — there is no donations, donors, or pledges table and no Zeffy/Stripe webhook endpoint. SanctuaryBase reaches back into the website via a server-side proxy (SB-v2 functions/api/site/[[path]].js forwarding to https://sfr-rescue.pages.dev/api with SITE_ADMIN_TOKEN, role-gated by _shared/verifyRole.js) — a genuinely good pattern used for animals, auction items, contact inbox, and newsletter list. But donor data flows nowhere: Zeffy holds the real transaction/recurring-gift history in its own silo; the app's donors Firestore collection is populated only by hand via DonorsPage.vue's \"Log Donation\" form; the ledger/financeStats collections are separate again and never reconciled with actual gifts. The result is three disconnected sources of financial truth (Zeffy, Firestore donors, Firestore ledger/financeStats) plus contact-form leads (subject enum includes 'donate', 'in-kind donation', 'car donation') that never convert into donor records. The impact-slider on donate.html even captures amount + monthly intent and then throws it away — window.open to the generic Zeffy form without passing the amount.",
+    "top_findings": [
+      {
+        "title": "No donation data pipeline: gifts live only inside Zeffy",
+        "severity": "critical",
+        "evidence": "donate.html lines 156, 444, 462, 487, 575, 670 — every CTA is https://www.zeffy.com/en-US/donation-form/animals-deserve-second-chances; _worker.js (functions/api/[[path]].ts section, lines ~14538-14607) defines no donations/donors table and no webhook route; grep for 'zeffy' in SB-v2 src/ and functions/ returns nothing.",
+        "detail": "There is zero programmatic link between the payment processor and either codebase. No Zeffy webhook, no scheduled import, no CSV ingestion. The org cannot see donor lifetime value, lapsed donors, recurring-gift health, or reconcile revenue — everything requires logging into Zeffy's dashboard. This is the single biggest blocker to a fundraising powerhouse."
+      },
+      {
+        "title": "Donor 'CRM' is a flat, denormalized card list with dead buttons",
+        "severity": "critical",
+        "evidence": "SB-v2 src/components/features/admin/DonorsPage.vue lines 112-128 (addDonor writes totalDonations as a string like '$50', donationCount: 1, lastDonation: 'Today', isMajor: false) and lines 65-66 ('Send Thank You' and 'View History' AppButtons have no @click handlers); StatCard 'This Year' hardcoded to \"0\" (line 7); src/stores/donors.js is generic CRUD with no donation subcollection, no dedupe, no aggregation.",
+        "detail": "Logging a second gift from the same person creates a duplicate donor document because addDonor always inserts. Amounts are stored as display strings, so no math (totals, segments, YTD) is possible. The thank-you and history features that make a CRM a CRM are non-functional stubs. There is no donations collection at all — a donor and a donation are conflated into one record."
+      },
+      {
+        "title": "Donation amount and monthly intent captured on the website are discarded at handoff",
+        "severity": "high",
+        "evidence": "donate.html lines 391-448: the impact slider tracks amount and monthlyToggle state, fires SF.track('Donate Click', {amount, monthly}), then window.open()s the generic Zeffy URL with no amount/frequency parameters.",
+        "detail": "The user picks $150/monthly, clicks 'Donate $150 now', and lands on a blank Zeffy form where they must re-choose everything. Every step re-entered costs conversion (industry data: pre-filled amounts lift completion 15-30%). Zeffy supports amount/frequency URL params or per-campaign forms — the highest-ROI one-line fix in the entire stack. Also, SF.track (app.js line 101) is a no-op because no analytics block is uncommented, so even donate-intent data isn't being collected."
+      },
+      {
+        "title": "Grant tracking is in-memory only — all pipeline data lost on page refresh",
+        "severity": "high",
+        "evidence": "SB-v2 src/components/features/admin/GrantsPage.vue lines 167-170: grants, uploadedFiles, pendingApplications, fundedGrants are plain ref([]) with no Firestore store, no localStorage, no onMounted fetch; GrantFinderPage.vue reads a 1,469-line hardcoded static array (grantData.js) of grants with 2026 deadlines that will silently go stale.",
+        "detail": "A volunteer who enters five grant applications and closes the tab loses everything. The AI LOI generator (functions/api/generate-loi.js, Workers AI) is genuinely useful, but its output isn't saved anywhere either. Grant tracking needs a real grants store + Firestore collection with statuses (prospect → LOI → applied → awarded/declined), deadlines, reporting obligations, and award-to-ledger linkage."
+      },
+      {
+        "title": "Three unreconciled sources of financial truth",
+        "severity": "high",
+        "evidence": "SB-v2 src/stores/ledger.js (collection 'ledgers'), src/stores/financeStats.js (collection 'financeStats', duplicating income/expense categorization logic), src/stores/donors.js (collection 'donors' with string amounts) — none reference each other; ledger.schema.json categories include 'Donations' and 'Grants & Funding' but nothing links a ledger row to a donor or grant record.",
+        "detail": "financeStats and ledger are near-identical parallel systems (both income/expense docs with category/amount) — a data-model smell that guarantees drift. A logged donation on DonorsPage does not create a ledger entry; a Zeffy payout appears in neither. Accurate 990 prep, donor-restricted-fund tracking, and campaign ROI are impossible on this foundation."
+      },
+      {
+        "title": "No receipts, acknowledgments, or year-end statements anywhere",
+        "severity": "medium",
+        "evidence": "donate.html FAQ line 541 tells donors to 'Request a donation receipt by emailing contact@saintfrancisrescue.org with proof of your donation' while the hero (line 161) promises 'Tax-deductible receipt sent automatically' — contradictory; corporate.html line 154 promises 'A written acknowledgment letter... issued promptly' with no system behind it; the only email machinery in SB-v2 is functions/api/send-reminder.js (MailChannels, task reminders only).",
+        "detail": "Zeffy sends its own transaction receipt, but check/ACH/in-kind/car donations (all promoted on donate.html's channel cards) have no receipt path except manual email. There is no IRS-compliant year-end giving statement generation, no thank-you sequencing, and the on-page promises don't match reality — a donor-trust risk for an org whose whole pitch is transparency."
+      },
+      {
+        "title": "Auction has no bidding mechanism — bids go through the contact form or Facebook",
+        "severity": "medium",
+        "evidence": "fundraiser.html lines 151-201: auctionCard() renders 'Inquire to bid' linking to contact.html?subject=donate&about=Bid:..., or a raw bidInstructions URL; auction_items schema in _worker.js (line 14581) has startingBidCents but no bids table, no currentBid, no bidder identity; SB-v2 auctionItems store is item CRUD only.",
+        "detail": "Current high bid isn't displayed, so bidders can't compete — the core dynamic of an auction. Bids arrive as free-text contact messages a volunteer must manually collate. No winner notification, no payment capture, no receipt (auction purchases have quid-pro-quo tax rules requiring FMV disclosure, which estimatedValueCents could power but doesn't). Fine for a 5-item Facebook-era auction; a ceiling on fundraising events at any scale."
+      },
+      {
+        "title": "Donation-intent leads (major gifts, corporate, in-kind, vehicle) die in a shared inbox",
+        "severity": "medium",
+        "evidence": "_worker.js contactsTable (line 14570) with subject enum 'donate'/'in-kind donation'/'car donation'; SB-v2 src/services/contactsService.js fetches these into a generic Inbox with reply/archive only; no path from a contact row to a donors record, task, or pipeline stage.",
+        "detail": "corporate.html and fundraiser.html deliberately drive high-value conversations ('Talk to us about a major gift', kennel capital campaign section) into contact.html. Those leads land beside name suggestions and general questions with no follow-up workflow, owner, or stage. Major-gift and corporate pipelines are exactly where a small sanctuary's transformative money comes from."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "Build a unified Gift + Donor data model in Firestore (the CRM core)",
+        "impact": "transformative",
+        "detail": "Replace the flat donors collection with: donors (identity: name, emails[], phones, address, type: individual/business/foundation, tags, notes, mergeable) and a separate donations collection (donorId, amountCents as integer, date, method: zeffy/check/ach/in-kind/vehicle/auction, frequency: one-time/recurring, campaignId, fund/restriction, softCreditId, acknowledgedAt, receiptSentAt). Derive rollups (lifetimeGiving, ytd, lastGiftDate, giftCount, avgGift) via Cloudflare Function or Firestore trigger rather than hand-maintained strings. Rewrite donors.js/DonorsPage.vue around this: dedupe-by-email on entry, gift history timeline per donor, working 'Send Thank You' and 'View History'. Every other module below depends on this."
+      },
+      {
+        "title": "Ingest Zeffy transactions automatically",
+        "impact": "transformative",
+        "detail": "Zeffy exposes payout/donation exports and (via their API/Zapier) transaction feeds. Add an SB-v2 Cloudflare Function (functions/api/zeffy-sync.js or a webhook receiver) that upserts each Zeffy transaction into donations, matching donors by email and creating them if new; flag recurring subscriptions with status (active/failed/cancelled) so lapsed recurring donors surface for recovery outreach. Fall back to a CSV import screen if API access is limited. This single integration turns the empty CRM into a live one with zero volunteer data entry and finally reconciles online giving with the ledger."
+      },
+      {
+        "title": "Pass amount and frequency through to checkout, and instrument the funnel",
+        "impact": "major",
+        "detail": "On donate.html, append the slider's amount and monthly flag to the Zeffy URL (or create dedicated one-time/monthly Zeffy forms per amount tier) so the checkout is pre-filled — one line in the donateBtn handler (line 444). Uncomment and configure the Plausible block already scaffolded in every page head so SF.track's Donate Click events (with amount/monthly/location, already wired in app.js lines 101-113) actually record; add a thank-you/return page as a conversion endpoint. Longer term, evaluate embedding the Zeffy form inline on donate.html instead of a new-tab handoff — every context switch loses donors."
+      },
+      {
+        "title": "Automated receipts, acknowledgments, and year-end statements",
+        "impact": "major",
+        "detail": "Extend the existing MailChannels email plumbing (functions/api/send-reminder.js pattern) into a receipts service: on any non-Zeffy donation logged in the app (check, ACH, in-kind with estimated value, vehicle, auction win), auto-send an IRS-compliant acknowledgment (EIN 99-0599742, no-goods-or-services language, or FMV disclosure for auction quid-pro-quo) and stamp receiptSentAt. Add a January job that generates consolidated year-end giving statements per donor across all channels. Fix the donate.html FAQ/hero contradiction about receipts to describe the real behavior. This delivers the transparency the corporate.html copy already promises."
+      },
+      {
+        "title": "Campaigns, funds, and pledges module",
+        "impact": "major",
+        "detail": "New Pinia store + Firestore collections: campaigns (name, goal, dates, e.g. 'Kennel Facility Capital Campaign' already marketed on fundraiser.html lines 137-148) and pledges (donorId, totalAmount, schedule, fulfilled installments). Tag every donation with campaignId/fund so restricted gifts are trackable. Expose campaign progress via the existing site proxy so the website can render a live thermometer on donate.html/fundraiser.html — public goal meters are among the highest-converting patterns in nonprofit fundraising and the plumbing (SF API client + admin proxy) already exists."
+      },
+      {
+        "title": "Persist and pipeline grants; keep the AI LOI generator",
+        "impact": "major",
+        "detail": "Create a grants Firestore collection + store (mirroring the CRUD pattern of donors.js) so GrantsPage.vue's in-memory refs (lines 167-170) survive refresh. Model stages (prospect → LOI sent → application → awarded/declined → reporting due) with deadline reminders through the existing send-reminder function. Save generate-loi.js output onto the grant record. Replace the static 2026-dated grantData.js catalog with an editable prospect list. On award, auto-create a ledger income entry ('Grants & Funding') linking grantId — closing the loop with finance."
+      },
+      {
+        "title": "Merge ledger and financeStats into one finance module tied to donors/grants",
+        "impact": "major",
+        "detail": "ledger.js ('ledgers') and financeStats.js ('financeStats') are duplicate income/expense systems; pick the ledger (it has a schema, ledger.schema.json), migrate financeStats data in, and rebuild FinanceStatsPage dashboards as computed views over the ledger. Add donorId/grantId/campaignId foreign keys to ledger entries so 'Donations' and 'Grants & Funding' category rows trace to their source, enabling real revenue-by-source reporting, 990 prep, and restricted-fund accounting."
+      },
+      {
+        "title": "Real-time auction bidding and lead-to-donor conversion in the inbox",
+        "impact": "nice-to-have",
+        "detail": "Auction: add a bids table to the website worker (itemId, name, email, amountCents, createdAt), show current high bid on fundraiser.html cards, and auto-notify outbid/winning bidders; record winner payments as donations with FMV quid-pro-quo receipts. Inbox: in SB-v2's Inbox/contacts view, add a 'Convert to donor' / 'Create major-gift opportunity' action for contact rows with subject donate/in-kind/car donation, creating the donor record and a follow-up task with an owner — so corporate.html's 'Start a conversation' CTA feeds a pipeline instead of an archive."
+      }
+    ],
+    "strengths": [
+      "donate.html is genuinely strong conversion copywriting: concrete impact anchors ($25/$75/$500 strip), the Charlie story with a real dollar figure, interactive impact slider with one-time/monthly toggle, trust indicators (EIN, 501(c)(3), '100% volunteer-run') repeated at every decision point, FAQ objection handling, and a tasteful exit-intent overlay that respects donate-intent sessionStorage — preserve all of this.",
+      "Donate-click tracking is already instrumented client-side (app.js SF.track, lines 101-113, auto-detecting zeffy/paypal/donorbox/givebutter hrefs with location + amount props) — it only needs an analytics backend enabled.",
+      "The SB-v2 → website admin proxy (functions/api/site/[[path]].js with server-side Firebase role verification and the site admin token never reaching the browser) is a clean, secure integration pattern — the exact channel to reuse for campaign thermometers, donation webhooks, and lead sync.",
+      "Multi-channel giving is well merchandised: online, check, ACH, in-kind, vehicle, monthly, corporate matching, sponsorship, and auction all have clear entry points across donate.html, corporate.html, ways-to-help.html.",
+      "The AI Letter-of-Intent generator (functions/api/generate-loi.js on Workers AI) and the curated grant-finder catalog are ahead of what most small rescues have — they just need persistence behind them.",
+      "Newsletter capture is a real end-to-end pipeline (pre-footer form on every page → POST /api/newsletter → Neon newsletter_subscribers with source attribution → admin-only export) — a working template for how donation data should flow.",
+      "Consistent Pinia store CRUD conventions and the ledger JSON schema (ledger.schema.json) mean new fundraising stores (donations, campaigns, pledges, grants) can follow an established, documented pattern."
+    ]
+  },
+  {
+    "expert": "Nonprofit CMS / volunteer & donation workflow specialist (Morweb-style)",
+    "integration_assessment": "The website and app do not share a single byte of volunteer data. The website's rich 4-step volunteer application (volunteer-signup.html: name, guardian/waiver flags for minors, interests, transport/vehicle, days/times/frequency, experience, heat tolerance, accessibility needs) is flattened into a plain-text string by formatVolunteerMessage() and POSTed to /api/contact, which inserts it into a Neon Postgres `contacts` table (_worker.js lines 14655-14674) — the same generic inbox as adoption, donation, and general messages. SanctuaryBase runs entirely on Firebase Firestore and never reads that table; its `applications` store (SB- v2/src/stores/applications.js) queries a Firestore `applications` collection the website never writes to. The only 'integration' is a hyperlink: the website thank-you screen and volunteer.html point at https://sanctuarybase.pages.dev/ where the volunteer re-enters name, email, phone, availability, skills, and experience from scratch in VolunteerSignup.vue — a second, competing application with different taxonomies (website: care/socialization/transport/maintenance/fostering/admin interests; app: Animal care/Cleaning/Feeding/Socializing/Medical/Admin skills). Worse, volunteer.html and volunteer-signup.html present two different recruitment funnels simultaneously (one says 'sign up on SanctuaryBase', the other hosts its own form), so applicants split across two disconnected systems and the coordinator must manually reconcile the contacts inbox against Firestore people records. Nothing flows back the other way either: no application status, waiver status, or volunteer hours ever surface on the website side.",
+    "top_findings": [
+      {
+        "title": "Volunteer applications are destroyed into unstructured text at the point of capture",
+        "severity": "critical",
+        "evidence": "SaintFrancis-Website/volunteer-signup.html lines 792-846 (formatVolunteerMessage + submitForm POST to /api/contact with subject:'volunteer'); _worker.js lines 14655-14674 (contactsTable insert: name, email, subject, message only)",
+        "detail": "The website form collects ~18 structured fields (availability days/times, frequency, interests, minor/guardian data, accessibility needs) then serializes them into a newline-joined message string stored in a generic contacts table. All structure is lost; nothing can be queried, matched to shifts, or imported into SanctuaryBase without a human parsing text. The fetch even swallows errors (.catch(function(){})) and shows the thank-you screen regardless, so failed submissions are silently lost with no retry and no record."
+      },
+      {
+        "title": "Two disconnected volunteer intake funnels compete with each other",
+        "severity": "critical",
+        "evidence": "volunteer.html lines 87, 214-266 (CTAs send people to sanctuarybase.pages.dev to sign up); volunteer-signup.html hosts its own 4-step form posting to /api/contact; SB- v2/src/components/auth/VolunteerSignup.vue is a separate 3-step signup writing to Firestore people + waivers",
+        "detail": "A prospective volunteer can end up in Neon Postgres (website form), in Firestore (app signup), or both, with different field taxonomies. The website thank-you screen then asks them to 'Create your account' in SanctuaryBase and re-type everything they just submitted. There is no dedupe, no handoff token, no import — the classic double-entry break in the recruit-to-onboard pipeline."
+      },
+      {
+        "title": "Two parallel, incompatible hour-tracking systems inside the app itself",
+        "severity": "high",
+        "evidence": "SB- v2/src/stores/shifts.js (clockIn/clockOut write to 'shifts' collection, hours as decimal, used by Shifts.vue lines 246-261); src/stores/clockIn.js (clockIn/clockOut write to 'checkins' collection, duration in minutes, used by auth.js clockIn lines 124-152)",
+        "detail": "Clocking in from the Shifts page creates a 'shifts' doc; clocking in via the auth-store path creates a 'checkins' doc. Neither reads the other, so total-hours reports (clockIn.getAllVolunteerHours vs Shifts.vue stats reduce) disagree depending on which button the volunteer used. Any hour-recognition or grant-reporting number built on this is unreliable."
+      },
+      {
+        "title": "Volunteer shift stats leak/miscount: 'my shifts' actually returns everyone's shifts",
+        "severity": "high",
+        "evidence": "SB- v2/src/stores/shifts.js line 15: `const volunteerShifts = computed(() => shifts.value)`; consumed by Shifts.vue lines 223-232 for upcoming/past/totalHours; also the persistent 'volunterId' (sic) typo used as the field name throughout shifts.js and Shifts.vue",
+        "detail": "The volunteer view's upcoming shifts, past shifts, and total-hours stats are computed over the entire shifts collection, not filtered by the logged-in user (getVolunteerShifts exists but is unused here). Combined with the misspelled volunterId field baked into stored documents, this makes personal hour reporting wrong and future migration painful."
+      },
+      {
+        "title": "Applications store is orphaned — nothing feeds it and no review workflow uses volunteer data",
+        "severity": "high",
+        "evidence": "SB- v2/src/stores/applications.js (full CRUD against Firestore 'applications' with status pending/approved) — but the website writes to Neon contacts, and VolunteerSignup.vue writes directly to 'people' with status:'active' (line 449) with no review gate",
+        "detail": "The app has the skeleton of an application pipeline (fetchApplicationsByStatus, addApplication), but volunteer signups bypass it entirely: anyone who completes the in-app form becomes an 'active' volunteer person record instantly, with no coordinator approval step, no onboarding checklist, no training gate. The pending-review concept exists only for adoption/foster applications seeded manually."
+      },
+      {
+        "title": "Waivers are self-attested text signatures with no minor-permission path",
+        "severity": "medium",
+        "evidence": "SB- v2/src/stores/waivers.js (signature stored as typed string, waiverVersion '1.0' hardcoded in VolunteerSignup.vue line 435); volunteer-signup.html minor flow (lines 429-449) promises 'We'll email the waiver to your parent or guardian' but no email or waiver record is ever created",
+        "detail": "The website tells under-18 applicants a guardian waiver will be emailed — there is no code anywhere that sends it or tracks it. In the app, the waiver is a typed-name match check (signature.toLowerCase() === name.toLowerCase()) with no versioning workflow, no re-sign on version change, and no expiry. For a liability document at an animal sanctuary (bite risk is real — the app has a biteReports store), this is a compliance gap."
+      },
+      {
+        "title": "Role assignment and onboarding state are disconnected from the volunteer record",
+        "severity": "medium",
+        "evidence": "SB- v2/src/stores/auth.js resolveUserRole (users/{uid} doc, default 'volunteer', roleInvites queue); userRoles.js setRoleForEmail; people.js addPerson — users, people, and waivers are three unlinked collections keyed differently (uid vs email vs name)",
+        "detail": "A volunteer exists as a users doc (auth/role), a people doc (profile), a waivers doc, plus shifts/checkins rows — joined only by fuzzy email/name matching. There is no canonical volunteer entity, so 'is this person onboarded, waiver-signed, trained, and active?' cannot be answered with one query."
+      },
+      {
+        "title": "No scheduling in the sense the website promises — shifts are clock-in records, not bookable slots",
+        "severity": "medium",
+        "evidence": "volunteer.html line 216 promises 'see what shifts are open, and claim one'; SB- v2 Shifts.vue volunteer view shows only 'Your upcoming shifts' created by an admin and an EmptyState saying 'Check with your coordinator for the schedule' — there is no open-shift board, no claim/signup action on shifts (only tasks in VolunteerHub.vue are claimable)",
+        "detail": "The public marketing promises self-service shift booking that the app does not implement. Admins can create shifts for a named volunteer, and volunteers can claim ad-hoc tasks, but there is no capacity-based schedule (e.g., 'Saturday AM feeding, 3 slots') that volunteers can browse and book — the core feature of every volunteer-management platform."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "One intake pipeline: website form writes structured applications directly into SanctuaryBase",
+        "impact": "transformative",
+        "detail": "Replace the /api/contact text-dump with a dedicated /api/volunteer-applications endpoint (Cloudflare function using Firebase Admin REST or a signed webhook) that writes the full structured payload from volunteer-signup.html into the Firestore 'applications' collection with type:'volunteer', status:'pending'. Retire the duplicate in-app application questions from VolunteerSignup.vue — when the applicant later creates their account, match on email and hydrate their people profile from the application (interests → skills, availDays/availTimes → availability, guardian/minor flags, accessibility needs). One form, zero re-entry, and the coordinator reviews applications inside the app instead of a raw contacts inbox."
+      },
+      {
+        "title": "Canonical volunteer entity with lifecycle states",
+        "impact": "transformative",
+        "detail": "Introduce a single volunteers model (or harden 'people' with type:'volunteer') keyed to auth uid, carrying a status machine: applied → approved → waiver_signed → orientation_complete → active → inactive/alumni. Link users/{uid}, waivers, checkins, shifts, and tasks to it by uid, not email/name. Add an onboarding checklist sub-document (waiver, safety briefing, heat training, minor permission if applicable) so the coordinator dashboard can show exactly who is stuck at which step — this is the backbone every other module (scheduling, hours, recognition) hangs off."
+      },
+      {
+        "title": "Real self-service shift scheduling with capacity slots",
+        "impact": "transformative",
+        "detail": "Build the shift model the website already advertises: shiftTemplates (e.g., 'Sat 6-9am feeding, capacity 3, requires: orientation_complete') generating bookable occurrences, a volunteer-facing open-shift board with one-tap claim/release, coordinator override, and reminder notifications. Gate claimable shifts on lifecycle state and certifications (e.g., med-run shifts require 'Medical' skill verified). Reuse the recurringTasks materialization pattern (recurringTasks.js) but move generation server-side (a Cloudflare cron worker) so it does not depend on an admin happening to open the app."
+      },
+      {
+        "title": "Unify hour tracking into a single timesheet service",
+        "impact": "major",
+        "detail": "Collapse the shifts.js and clockIn.js clock-in/out paths into one 'timeEntries' collection (uid, shiftId?, source, clockInAt, clockOutAt, minutes), migrate existing 'shifts' and 'checkins' docs, fix the volunterId typo and the volunteerShifts computed that returns all shifts (shifts.js line 15). On top of it, add hour reports: per-volunteer YTD, org-wide totals for grant applications, exportable CSV, and an in-kind labor valuation line that can feed the ledger/financeStats stores the app already has."
+      },
+      {
+        "title": "Waiver and training/certification module with versioning and minor support",
+        "impact": "major",
+        "detail": "Version waiver documents (store text + version in Firestore), require re-sign when the version bumps, capture drawn or typed signature with timestamp and IP, and add an expiry/renewal cycle. Implement the guardian flow the website promises: a minor application triggers an emailed signing link (Cloudflare Email Service) to the guardian, and the volunteer cannot pass 'waiver_signed' until it returns. Extend the same engine to training certifications (heat safety, large-animal handling, med administration) with expiry dates that scheduling can enforce."
+      },
+      {
+        "title": "Recognition and retention layer",
+        "impact": "major",
+        "detail": "The website sells 'watch your hours and your impact add up' — deliver it: milestone badges (10/50/100 hours), an annual hours letter (volunteers need these for school/court/employer programs), streak tracking off timeEntries, and coordinator nudges for volunteers who have not clocked in for 30 days. Surface an opt-in public counter on the website ('22 volunteers, 4,100 hours this year') fed by a small public stats endpoint, replacing the hardcoded volunteers: 22 in _worker.js /api/stats."
+      },
+      {
+        "title": "Coordinator inbox: merge website contacts into the app",
+        "impact": "major",
+        "detail": "The app's Inbox.vue and the website admin.html contacts inbox are separate tools with separate auth (Firestore rules vs a shared ADMIN_TOKEN bearer string). Sync or proxy the Neon contacts (adoption/foster/donation/general inquiries) into the app's inbox so staff work one queue, and replace the static ADMIN_TOKEN with Firebase-auth-verified access. This also lets a 'convert to volunteer application / adopter / donor' action create the right structured record from any inquiry."
+      },
+      {
+        "title": "Close the loop on the two-funnel confusion now (cheap interim fix)",
+        "impact": "nice-to-have",
+        "detail": "Until the pipeline is rebuilt: make volunteer.html and volunteer-signup.html agree on one path (form first, account second); pass the applicant's email as a query param to sanctuarybase.pages.dev so the app signup pre-fills and tags the account; make the website form surface submission failures instead of the silent .catch(function(){}); and remove the unused quick-interest sessionStorage widget (volunteer-signup.html lines 218-233) whose answers are never read or submitted anywhere."
+      }
+    ],
+    "strengths": [
+      "The website volunteer form itself is excellent nonprofit UX: warm copy, 4-step progressive disclosure, minor/guardian branch, accessibility-needs question, transport/vehicle follow-up, and only name+email+age required (volunteer-signup.html) — the data model it captures is exactly what a volunteer CRM needs; only the storage is wrong.",
+      "The app's in-signup waiver step (VolunteerSignup.vue steps 3-4) correctly blocks account completion until a signature matching the legal name is provided, and writes an auditable waivers record with signedAt and waiverVersion.",
+      "The roleInvites pattern (userRoles.js + auth.js resolveUserRole) is a genuinely clean solution for pre-assigning roles to people who have not logged in yet, enforced by Firestore rules rather than client trust.",
+      "recurringTasks.js shows thoughtful engineering for a no-server-cron environment: period keys, lastGeneratedKey stamping, and a second duplicate guard on (recurringId, periodKey) — a solid pattern to reuse for shift generation.",
+      "VolunteerHub.vue's claim/complete/release task flow with real-time onSnapshot updates (tasks.js) is a working, volunteer-friendly micro-volunteering loop worth keeping as-is.",
+      "The website consistently markets SanctuaryBase as the volunteer home base (volunteer.html 'Meet SanctuaryBase' section, PWA install hints on the thank-you screen) — the brand narrative for a website-plus-app ecosystem is already in place; the plumbing just has to catch up."
+    ]
+  },
+  {
+    "expert": "Robintek/Equalize-style senior developer & remediation auditor — architecture, performance, and security for animal-services platforms",
+    "integration_assessment": "The two systems connect through one well-designed seam and several broken or missing ones. The good seam: SanctuaryBase's Pages Function proxy (`SB- v2/functions/api/site/[[path]].js` + `functions/_shared/verifyRole.js`) verifies the caller's Firebase ID token server-side against their Firestore role, then forwards to the website's Hono worker API with a `SITE_ADMIN_TOKEN` secret that never reaches the browser — this is the right pattern and it powers the app's Inbox (Neon contacts), website animal listings (WebsiteListingTab), and auction items. The broken seams: (1) the website's adoption and foster applications POST structured fields (phone, address, experience, setup, care, goals) to `/api/contact`, but the worker's insert at `_worker.js:14655` persists only name/email/subject/message — most of the application data is silently destroyed; (2) the app maintains a separate Firestore `applications` collection and ApplicationsPage that never receives website submissions, so there are two disconnected application pipelines; (3) animals exist twice — Firestore `animals` for operations and Neon `animals` for public listings — synced only by manual per-animal pushes; (4) donations go through Zeffy links with no webhook, so the app's donors/ledger/financeStats modules are hand-fed and never see actual online donations. The website is essentially a brochure with a mail slot; for the \"front door\" vision, applications, donations, and animal status need structured, automatic flow into SanctuaryBase.",
+    "top_findings": [
+      {
+        "title": "Adoption/foster application data silently discarded server-side",
+        "severity": "critical",
+        "evidence": "SaintFrancis-Website/adopt-apply.html submit handler (~line 464-495) sends phone, address, interest, experience, setup, other-animals, care, goals; foster-apply.html (~line 452) sends animals, living, experience, time. _worker.js POST /contact (line 14655) inserts ONLY name, email, subject, message into contactsTable.",
+        "detail": "Every adoption and foster application loses the applicant's phone number, address, and all screening answers the moment it is submitted — staff see only the free-text message in the SanctuaryBase Inbox. The volunteer form (volunteer-signup.html:815-845) avoids this by flattening everything into the message string, but it also swallows all errors (.catch(function(){}) then shows success), so failed submissions look successful to the applicant. This is active data loss on the org's most important intake flows."
+      },
+      {
+        "title": "Unauthenticated Cloudflare Functions expose R2 documents, AI, and an open email relay",
+        "severity": "critical",
+        "evidence": "SB- v2/functions/api/: delete-document.js, upload-document.js, get-documents.js, vet-chat.js, generate-loi.js, send-reminder.js have no auth check; grep shows only generate-animal-bio.js and api/site/* use verifyCallerRole/Authorization.",
+        "detail": "Anyone on the internet can DELETE any object in the GRANTS_BUCKET R2 bucket (delete-document.js takes an arbitrary ?key=), list and upload grant documents, burn Workers AI quota via vet-chat/generate-loi, and use send-reminder as an open email relay (arbitrary to/subject/body → spam sent under the org's domain). The verifyCallerRole helper already exists and is proven in the site proxy — it simply is not applied to these six endpoints."
+      },
+      {
+        "title": "Firestore rules leak donor, finance, and private-message data to every volunteer",
+        "severity": "high",
+        "evidence": "SB- v2/firestore.rules: ledgers, donors, donations, financeStats, grants, biteReports, eodReports all 'allow read: if isAuth()'; messages 'allow read: if isAuth()' (line 444) means any user reads all DMs; tasks/swaps/events/availability/supplies 'allow update/write: if isAuth()'.",
+        "detail": "Any self-registered volunteer account (signup creates role 'volunteer' automatically per stores/auth.js) can read the full donor CRM, the complete financial ledger, everyone's direct messages, and bite/incident reports, and can update any task, shift swap, event, or supply record. The role-invite mechanism and default-deny rule are genuinely well designed, but read-scoping was never done per role. For a platform holding donor PII and finances, reads must be tiered like writes already are."
+      },
+      {
+        "title": "No router: tab-state navigation cannot scale to a full platform",
+        "severity": "high",
+        "evidence": "SB- v2/src/App.vue lines 37-139: 50 statically imported page components in a routeMap keyed by ui.currentTab; src/stores/ui.js: currentTab/selectedAnimal are plain refs with no URL or history sync.",
+        "detail": "There is no vue-router: no deep links (staff cannot bookmark or share 'animal Leo, Health tab'), the browser back button exits the app, a refresh on AnimalDetail loses ui.selectedAnimal and dumps the user to the dashboard, and there are no route-level guards — admin gating is repeated ad hoc inside components. Every new module makes App.vue's import list and routeMap longer. This is the single biggest structural blocker to the powerhouse vision."
+      },
+      {
+        "title": "Single 1.18 MB JS bundle, no code splitting, empty vite config",
+        "severity": "high",
+        "evidence": "SB- v2/dist/assets/index-BKSqHvuh.js = 1,182,368 bytes plus index-DIjZRvtX.css = 331,939 bytes; vite.config.js has no manualChunks, no rollup output config; all 50 pages eagerly imported in App.vue (only recurringTasks store is dynamically imported).",
+        "detail": "A volunteer on a phone in a barn downloads the entire admin suite — grants, finance stats, bite reports, auction admin — before seeing the dashboard. Firebase SDK alone is several hundred KB and is bundled with everything else. With a router and per-route dynamic imports plus a vendor chunk for firebase/vue/pinia, first-load JS could realistically drop 60-70%. Also no PWA/service worker despite field use on mobile."
+      },
+      {
+        "title": "Fetch-everything Firestore access: no pagination, no cache, no offline support",
+        "severity": "medium",
+        "evidence": "46 getDocs() calls across 29 stores (e.g. src/stores/animals.js fetchAnimals reads the whole 'animals' collection); only activityLog.js and roundsHistory.js use limit(); services/firebase.js uses plain getFirestore() with no persistentLocalCache; only 3 stores (tasks, announcements, supplyInventory) use onSnapshot.",
+        "detail": "Nearly every page load re-reads entire collections. Fine at 50 animals; at multi-year scale (feeding logs, ledger entries, rounds history grow unboundedly) this means slow pages and mounting Firestore read costs. There is no IndexedDB persistence, so the app is unusable offline — a real problem for a sanctuary with patchy connectivity. The three onSnapshot stores do guard against double-subscription (tasks.js firstSnapshotPromise) which is good, but module-level listeners are never stopped on logout."
+      },
+      {
+        "title": "Website worker is a 492 KB compiled bundle committed as source",
+        "severity": "medium",
+        "evidence": "SaintFrancis-Website/_worker.js (492,333 bytes) contains bundled Hono + Drizzle with hand-maintained routes starting ~line 14625; no src/ directory or build script for it in the repo.",
+        "detail": "Application routes are edited directly inside a minified-ish vendor bundle. Any dependency upgrade or non-trivial change risks corrupting the file, diffs are unreviewable, and there are no tests possible. The vestigial POST /admin/login (line 14856) still returns the raw ADMIN_TOKEN when the 'password' equals the token — pointless now that admin.html is a redirect stub, and a needless token-echo endpoint."
+      },
+      {
+        "title": "Public forms have no bot protection or rate limiting",
+        "severity": "medium",
+        "evidence": "_worker.js POST /contact (14655), /newsletter (14676), /suggestions (14760) accept unauthenticated JSON with no Turnstile, no rate limiting, no honeypot; grep for turnstile/captcha/rate in _worker.js finds nothing.",
+        "detail": "The contact table (which is also the app's Inbox) and newsletter list can be flooded by trivial scripts, polluting the exact data staff triage in SanctuaryBase. Cloudflare Turnstile is free and native to this stack."
+      }
+    ],
+    "revamp_recommendations": [
+      {
+        "title": "Adopt vue-router with lazy-loaded route modules",
+        "impact": "transformative",
+        "detail": "Replace ui.currentTab with vue-router: one route per current tab (paths like /animals/:id/health), route-level code splitting via () => import(...), a navigation guard reading auth.user.role for admin/* routes, and query/param state instead of ui.selectedAnimal. This unlocks deep links, back/refresh, shareable URLs, per-module bundles, and makes every future module (HR, events, comms) a self-contained folder of routes + stores + components instead of another App.vue import. Migration is mechanical because routeMap in App.vue already is a router table."
+      },
+      {
+        "title": "Build a real intake pipeline: structured applications end-to-end",
+        "impact": "transformative",
+        "detail": "Fix the /contact data loss immediately (persist the full JSON payload, e.g. a jsonb 'details' column in Neon or dedicated applications table), then go further: add POST /api/applications on the website worker with typed adoption/foster/volunteer schemas, have SanctuaryBase's ApplicationsPage read them through the existing site proxy (or sync into the Firestore 'applications' collection), and wire status transitions (submitted → screening → approved → adopted) back to the animal record. This turns the website into the actual front door instead of a mail slot, and merges the two disconnected application pipelines."
+      },
+      {
+        "title": "Lock down the functions layer and re-tier Firestore reads",
+        "impact": "transformative",
+        "detail": "Apply verifyCallerRole (already written in functions/_shared/verifyRole.js) to all six unauthenticated functions — delete/upload/get-document should require admin, vet-chat/generate-loi staff, send-reminder staff with an allowlisted sender. In firestore.rules, change donors/ledgers/donations/financeStats/grants/biteReports reads to isPrivileged(), scope messages reads to sender/recipient, and tighten the isAuth() writes on tasks/swaps/events/supplies to owner-or-privileged. Keep the excellent roleInvites + default-deny design as-is."
+      },
+      {
+        "title": "Code-split and add offline support for field use",
+        "impact": "major",
+        "detail": "With the router in place: dynamic-import every page, add manualChunks in vite.config.js (firebase, vue/pinia vendors), and switch services/firebase.js to initializeFirestore with persistentLocalCache so the app works in the barn with no signal (feeding logs, rounds, meds queue offline and sync). Add a PWA manifest + service worker so staff install it on phones. Target: <300 KB initial JS."
+      },
+      {
+        "title": "Close the donation loop with a payment webhook and donor sync",
+        "impact": "major",
+        "detail": "Zeffy links mean online donations never reach the app's donors/ledger/financeStats stores. Add a webhook receiver (Zeffy Zapier export, or move to Stripe/Givebutter with native webhooks) as a Cloudflare Function that writes donation records and upserts donors — making the fundraising module real instead of manually maintained. Same pattern later feeds newsletter signups into a communications module (the Neon newsletter table already exists and the app already has NewsletterPage)."
+      },
+      {
+        "title": "Un-bundle the website worker into buildable source",
+        "impact": "major",
+        "detail": "Extract the ~500 lines of actual routes (lines 14625+) into a src/worker/ project with Hono + Drizzle as npm dependencies and a wrangler/esbuild build step producing _worker.js. Delete the vestigial /admin/login token-echo route. This makes the API testable and safely evolvable — a prerequisite for the richer /api/applications and webhook endpoints above."
+      },
+      {
+        "title": "Introduce pagination and query discipline in stores",
+        "impact": "major",
+        "detail": "Add orderBy + limit + startAfter cursors to the unbounded fetchAll stores (feedingLogs, ledger, rounds, medicalRecords, eodReports grow forever), standardize a shared createCollectionStore factory (the 40 stores are near-identical copies of the same 100-line pattern — a factory cuts thousands of duplicated lines and gives one place to add caching/pagination/error handling), and prefer where-scoped queries (per-animal, per-date-range) over whole-collection reads."
+      },
+      {
+        "title": "Add Turnstile and rate limiting to public website forms",
+        "impact": "nice-to-have",
+        "detail": "Protect /api/contact, /api/newsletter, /api/suggestions with Cloudflare Turnstile server-side verification plus a simple per-IP rate limit in the worker; also fix volunteer-signup.html's swallowed fetch errors so applicants see real failure states. Keeps the SanctuaryBase Inbox clean as traffic grows."
+      }
+    ],
+    "strengths": [
+      "The site-proxy security pattern (functions/api/site/[[path]].js + _shared/verifyRole.js): Firebase ID token verified server-side against the real Firestore role, site admin token kept as a Pages secret, staff/admin path scoping, and careful byte-for-byte multipart passthrough — this is the correct template for all future website↔app integration.",
+      "Firestore rules fundamentals: default-deny catch-all, role stored in users/{uid} as single source of truth with no self-escalation, and the roleInvites flow verified inside the rules via get() rather than trusted from the client — thoughtful, documented design.",
+      "The public website's performance and hardening posture is genuinely strong: preloaded hero image and self-hosted woff2 fonts, webp images, deferred analytics, tight CSP + HSTS + full security-header set in _headers, immutable caching for static assets, noscript fallbacks, and schema.org structured data.",
+      "App.vue's routeMap object (vs. 45 v-else-ifs) and the guarded onSnapshot subscription pattern in tasks.js (firstSnapshotPromise prevents duplicate listeners) show the codebase is already halfway to router/listener discipline.",
+      "Retiring the website's own admin.html to a redirect stub and consolidating all admin into SanctuaryBase eliminated a whole duplicate attack surface and duplicate UI to maintain.",
+      "Documentation depth (ARCHITECTURE.md, CODEBASE_MAP.md, DESIGN_SYSTEM.md, seed-data guides) and a consistent UI component library (src/components/ui) give a solid base for onboarding contributors to a larger platform."
+    ]
+  }
+]
