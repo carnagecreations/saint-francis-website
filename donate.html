@@ -441,7 +441,17 @@ details.faq-item[open] .faq-question { margin-bottom: .8rem; }
     donateBtn.addEventListener('click', function() {
       if (window.SF && SF.track) SF.track('Donate Click', { location: 'donate', target: 'impact-slider', amount: Number(slider.value), monthly: !!monthlyToggle.checked });
       try { sessionStorage.setItem('sf-donate-intent', '1'); } catch (e) {}
-      window.open('https://www.zeffy.com/en-US/donation-form/animals-deserve-second-chances?utm_source=saintfrancisrescue.org&utm_medium=website&utm_campaign=donate-page&utm_content=impact-slider', '_blank', 'noopener');
+      const amount = Number(slider.value);
+      const amountCents = amount * 100;
+      const baseUrl = 'https://www.zeffy.com/en-US/donation-form/animals-deserve-second-chances';
+      const params = new URLSearchParams({
+        utm_source: 'saintfrancisrescue.org',
+        utm_medium: 'website',
+        utm_campaign: 'donate-page',
+        utm_content: 'impact-slider',
+        initialAmount: amountCents
+      });
+      window.open(baseUrl + '?' + params.toString(), '_blank', 'noopener');
     });
     updateDonation();
   })();
