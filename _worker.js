@@ -14645,6 +14645,16 @@ var newsletterTable = pgTable("newsletter_subscribers", {
   source: text("source"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
+var storiesTable = pgTable("stories", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  excerpt: text("excerpt").notNull(),
+  body: text("body").notNull(),
+  imageUrl: text("image_url"),
+  status: text("status").notNull().default("draft"),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
 // Zeffy's webhook payload schema isn't publicly documented, so every field
 // below except `raw` is a best-effort extraction that may be wrong or absent
 // — `raw` always keeps the untouched payload so no donation data is ever
@@ -15112,6 +15122,26 @@ app.post("/fundraiser/items/:id/bids", async (c) => {
   const [bid] = await db.insert(auctionBidsTable).values({ itemId: id, bidderName, bidderEmail, amountCents }).returning();
   return c.json({ id: bid.id, currentBidCents: amountCents, message: "Bid placed! We'll email you if you're outbid." }, 201);
 });
+function serializeStory(s) {
+  return {
+    ...s,
+    publishedAt: s.publishedAt ? s.publishedAt.toISOString() : null,
+    createdAt: s.createdAt.toISOString()
+  };
+}
+app.get("/stories", async (c) => {
+  const db = getDb(c.env);
+  const stories = await db.select().from(storiesTable).where(eq(storiesTable.status, "published")).orderBy(sql`${storiesTable.publishedAt} DESC`);
+  return c.json(stories.map(serializeStory));
+});
+app.get("/stories/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) return c.json({ error: "Invalid story ID" }, 400);
+  const db = getDb(c.env);
+  const [story] = await db.select().from(storiesTable).where(eq(storiesTable.id, id));
+  if (!story || story.status !== "published") return c.json({ error: "Story not found" }, 404);
+  return c.json(serializeStory(story));
+});
 function requireAdmin(env, authHeader) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
   return authHeader.slice(7) === env.ADMIN_TOKEN;
@@ -15358,6 +15388,69 @@ app.delete("/admin/auction-items/:id", async (c) => {
   if (!deleted) return c.json({ error: "Auction item not found" }, 404);
   return c.json({ id: deleted.id, message: "Auction item deleted successfully" });
 });
+app.get("/admin/stories", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const db = getDb(c.env);
+  const stories = await db.select().from(storiesTable).orderBy(sql`${storiesTable.createdAt} DESC`);
+  return c.json(stories.map(serializeStory));
+});
+app.post("/admin/stories", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json().catch(() => null);
+  if (!body?.title || !body?.excerpt || !body?.body) {
+    return c.json({ error: "Invalid story data" }, 400);
+  }
+  const status = body.status === "published" ? "published" : "draft";
+  const db = getDb(c.env);
+  const [story] = await db.insert(storiesTable).values({
+    title: body.title,
+    excerpt: body.excerpt,
+    body: body.body,
+    imageUrl: body.imageUrl ?? null,
+    status,
+    publishedAt: status === "published" ? /* @__PURE__ */ new Date() : null
+  }).returning();
+  return c.json(serializeStory(story), 201);
+});
+app.patch("/admin/stories/:id", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) return c.json({ error: "Invalid ID" }, 400);
+  const body = await c.req.json().catch(() => null);
+  if (!body) return c.json({ error: "Invalid story data" }, 400);
+  const db = getDb(c.env);
+  const [existing] = await db.select().from(storiesTable).where(eq(storiesTable.id, id));
+  if (!existing) return c.json({ error: "Story not found" }, 404);
+  const status = body.status === "published" ? "published" : "draft";
+  const [story] = await db.update(storiesTable).set({
+    title: body.title,
+    excerpt: body.excerpt,
+    body: body.body,
+    imageUrl: body.imageUrl ?? null,
+    status,
+    // Stamp publishedAt the first time a story goes live; never clear it on
+    // a later edit back to draft, so "originally published" stays honest.
+    publishedAt: status === "published" && !existing.publishedAt ? /* @__PURE__ */ new Date() : existing.publishedAt
+  }).where(eq(storiesTable.id, id)).returning();
+  return c.json(serializeStory(story));
+});
+app.delete("/admin/stories/:id", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) return c.json({ error: "Invalid ID" }, 400);
+  const db = getDb(c.env);
+  const [deleted] = await db.delete(storiesTable).where(eq(storiesTable.id, id)).returning({ id: storiesTable.id });
+  if (!deleted) return c.json({ error: "Story not found" }, 404);
+  return c.json({ id: deleted.id, message: "Story deleted successfully" });
+});
 function slugify(s) {
   return String(s || "").toLowerCase().trim()
     .replace(/[^a-z0-9]+/g, "-")
@@ -15585,6 +15678,9 @@ root.get("/sitemap.xml", async (c) => {
   const animals = await db.select({ id: animalsTable.id, name: animalsTable.name, status: animalsTable.status, createdAt: animalsTable.createdAt })
     .from(animalsTable)
     .where(sql`${animalsTable.status} IN ('available', 'fostered', 'resident')`);
+  const stories = await db.select({ id: storiesTable.id, publishedAt: storiesTable.publishedAt })
+    .from(storiesTable)
+    .where(eq(storiesTable.status, "published"));
   const staticEntries = STATIC_SITEMAP_PAGES.map((p) => `  <url>
     <loc>${SITE_ORIGIN}${p.path}</loc>
     <changefreq>${p.changefreq}</changefreq>
@@ -15596,9 +15692,15 @@ root.get("/sitemap.xml", async (c) => {
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>`);
+  const storyEntries = stories.map((s) => `  <url>
+    <loc>${SITE_ORIGIN}/stories.html?id=${s.id}</loc>
+    <lastmod>${(s.publishedAt || /* @__PURE__ */ new Date()).toISOString().slice(0, 10)}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>`);
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${staticEntries.concat(animalEntries).join("\n")}
+${staticEntries.concat(animalEntries).concat(storyEntries).join("\n")}
 </urlset>`;
   return c.text(xml, 200, { "Content-Type": "application/xml" });
 });
