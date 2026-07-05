@@ -14623,6 +14623,14 @@ var auctionItemsTable = pgTable("auction_items", {
   status: auctionStatusEnum("status").notNull().default("active"),
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
+var auctionBidsTable = pgTable("auction_bids", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").notNull(),
+  bidderName: text("bidder_name").notNull(),
+  bidderEmail: text("bidder_email").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
 var suggestionsTable = pgTable("suggestions", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -15031,13 +15039,35 @@ app.patch("/admin/site-stats", async (c) => {
   const [config] = await db.update(siteStatsTable).set(updates).where(eq(siteStatsTable.id, 1)).returning();
   return c.json(config || { error: "Not configured" }, config ? 200 : 404);
 });
+async function getBidAggregates(db, itemIds) {
+  if (!itemIds.length) return {};
+  const rows = await db.select({
+    itemId: auctionBidsTable.itemId,
+    maxBid: sql`MAX(${auctionBidsTable.amountCents})`,
+    bidCount: sql`COUNT(*)`
+  }).from(auctionBidsTable).where(inArray(auctionBidsTable.itemId, itemIds)).groupBy(auctionBidsTable.itemId);
+  const map = {};
+  rows.forEach((r) => {
+    map[r.itemId] = { maxBid: Number(r.maxBid), bidCount: Number(r.bidCount) };
+  });
+  return map;
+}
+function withBidInfo(item, aggregates) {
+  const agg = aggregates[item.id];
+  return {
+    ...serializeAuctionItem(item),
+    currentBidCents: agg ? agg.maxBid : item.startingBidCents,
+    bidCount: agg ? agg.bidCount : 0
+  };
+}
 app.get("/fundraiser/items/:id", async (c) => {
   const id = Number(c.req.param("id"));
   if (isNaN(id)) return c.json({ error: "Invalid item ID" }, 400);
   const db = getDb(c.env);
   const [item] = await db.select().from(auctionItemsTable).where(eq(auctionItemsTable.id, id));
   if (!item) return c.json({ error: "Auction item not found" }, 404);
-  return c.json(serializeAuctionItem(item));
+  const aggregates = await getBidAggregates(db, [id]);
+  return c.json(withBidInfo(item, aggregates));
 });
 app.get("/fundraiser/items", async (c) => {
   const status = c.req.query("status");
@@ -15048,7 +15078,39 @@ app.get("/fundraiser/items", async (c) => {
       status
     ) : void 0
   ).orderBy(auctionItemsTable.createdAt);
-  return c.json(items.map(serializeAuctionItem));
+  const aggregates = await getBidAggregates(db, items.map((i) => i.id));
+  return c.json(items.map((i) => withBidInfo(i, aggregates)));
+});
+app.post("/fundraiser/items/:id/bids", async (c) => {
+  if (!await rateLimit(c, "auction-bid", 10, 600)) {
+    return c.json({ error: "Too many requests. Please try again in a few minutes." }, 429);
+  }
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) return c.json({ error: "Invalid item ID" }, 400);
+  const body = await c.req.json().catch(() => null);
+  const bidderName = String(body?.name || "").trim();
+  const bidderEmail = String(body?.email || "").trim();
+  const amountCents = Math.round(Number(body?.amountCents));
+  if (!bidderName || !bidderEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bidderEmail)) {
+    return c.json({ error: "A valid name and email are required" }, 400);
+  }
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    return c.json({ error: "Enter a valid bid amount" }, 400);
+  }
+  const db = getDb(c.env);
+  const [item] = await db.select().from(auctionItemsTable).where(eq(auctionItemsTable.id, id));
+  if (!item) return c.json({ error: "Auction item not found" }, 404);
+  if (item.status !== "active") return c.json({ error: "This item is no longer accepting bids" }, 400);
+  if (item.endsAt && new Date(item.endsAt).getTime() <= Date.now()) {
+    return c.json({ error: "Bidding has closed for this item" }, 400);
+  }
+  const [{ maxBid }] = await db.select({ maxBid: sql`MAX(${auctionBidsTable.amountCents})` }).from(auctionBidsTable).where(eq(auctionBidsTable.itemId, id));
+  const currentBidCents = maxBid ? Number(maxBid) : item.startingBidCents;
+  if (amountCents <= currentBidCents) {
+    return c.json({ error: `Your bid must be higher than the current bid of ${(currentBidCents / 100).toFixed(2)}` }, 400);
+  }
+  const [bid] = await db.insert(auctionBidsTable).values({ itemId: id, bidderName, bidderEmail, amountCents }).returning();
+  return c.json({ id: bid.id, currentBidCents: amountCents, message: "Bid placed! We'll email you if you're outbid." }, 201);
 });
 function requireAdmin(env, authHeader) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
@@ -15227,7 +15289,18 @@ app.get("/admin/auction-items", async (c) => {
   }
   const db = getDb(c.env);
   const items = await db.select().from(auctionItemsTable).orderBy(auctionItemsTable.createdAt);
-  return c.json(items.map(serializeAuctionItem));
+  const aggregates = await getBidAggregates(db, items.map((i) => i.id));
+  return c.json(items.map((i) => withBidInfo(i, aggregates)));
+});
+app.get("/admin/auction-items/:id/bids", async (c) => {
+  if (!requireAdmin(c.env, c.req.header("Authorization"))) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) return c.json({ error: "Invalid item ID" }, 400);
+  const db = getDb(c.env);
+  const bids = await db.select().from(auctionBidsTable).where(eq(auctionBidsTable.itemId, id)).orderBy(sql`${auctionBidsTable.amountCents} DESC`);
+  return c.json(bids.map((b) => ({ ...b, createdAt: b.createdAt.toISOString() })));
 });
 app.post("/admin/auction-items", async (c) => {
   if (!requireAdmin(c.env, c.req.header("Authorization"))) {

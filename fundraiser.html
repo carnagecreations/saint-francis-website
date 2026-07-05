@@ -163,6 +163,49 @@ document.addEventListener("DOMContentLoaded", function () {
   }).catch(function () {
     grid.innerHTML = '<div class="empty">' + '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="9" width="17" height="11" rx="1"/><path d="M3.5 13h17M12 9v11"/><path d="M12 9S10 4 7.5 5 9 9 12 9Zm0 0s2-5 4.5-4-1 4-4.5 4Z"/></svg>' + '<p>We couldn&rsquo;t load the auction just now. Please refresh in a moment.</p></div>';
   });
+
+  // Bid form submissions (event delegation — cards are inserted after load)
+  grid.addEventListener("submit", function (e) {
+    var form = e.target.closest(".bid-form");
+    if (!form) return;
+    e.preventDefault();
+    var itemId = form.getAttribute("data-item-id");
+    var status = form.querySelector(".bid-status");
+    var btn = form.querySelector(".bid-submit");
+    var name = form.querySelector(".bid-name").value.trim();
+    var email = form.querySelector(".bid-email").value.trim();
+    var amount = parseFloat(form.querySelector(".bid-amount").value);
+    status.className = "bid-status";
+    status.textContent = "";
+    if (!name || !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      status.className = "bid-status err";
+      status.textContent = "Please enter a valid name and email.";
+      return;
+    }
+    if (!amount || amount <= 0) {
+      status.className = "bid-status err";
+      status.textContent = "Enter a valid bid amount.";
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Placing bid…";
+    SF.placeBid(itemId, { name: name, email: email, amountCents: Math.round(amount * 100) })
+      .then(function (res) {
+        status.className = "bid-status ok";
+        status.textContent = res.message || "Bid placed!";
+        form.reset();
+        var priceEl = form.closest(".card").querySelector(".current-bid-price");
+        if (priceEl) priceEl.textContent = SF.money(res.currentBidCents);
+      })
+      .catch(function (err) {
+        status.className = "bid-status err";
+        status.textContent = (err && err.message) || "Failed to place bid. Please try again.";
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = "Place bid";
+      });
+  });
 });
 
 function auctionCard(it, i) {
@@ -180,12 +223,28 @@ function auctionCard(it, i) {
   }
   var instr = (it.bidInstructions || "").trim();
   var isUrl = /^https?:\/\//i.test(instr);
-  var action = closed
-    ? '<span class="tag tag-adopted">' + (it.status === "won" ? "Won" : "Closed") + '</span>'
-    : (isUrl
-        ? '<a class="btn btn-clay btn-sm" href="' + SF.esc(instr) + '" target="_blank" rel="noopener">Place a bid ' + '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>' + '</a>'
-        : '<a class="btn btn-clay btn-sm" href="contact.html?subject=donate&about=' + encodeURIComponent("Bid: " + it.title) + '">Inquire to bid</a>');
-  var instrText = (instr && !isUrl) ? '<p class="muted" style="font-size:.85rem;margin-top:.4rem"><strong>How to bid:</strong> ' + SF.esc(instr) + '</p>' : '';
+  var hasBids = (it.bidCount || 0) > 0;
+  var currentBid = typeof it.currentBidCents === "number" ? it.currentBidCents : it.startingBidCents;
+  var bidPrice = '<div style="display:flex;align-items:baseline;gap:.6rem;margin-top:.6rem">' +
+    '<span class="price current-bid-price" style="font-size:1.3rem">' + SF.money(currentBid) + '</span>' +
+    '<span class="muted" style="font-size:.8rem">' + (hasBids ? (it.bidCount + (it.bidCount === 1 ? " bid" : " bids")) : "starting bid") + '</span>' +
+  '</div>';
+  var action;
+  if (closed) {
+    action = '<span class="tag tag-adopted">' + (it.status === "won" ? "Won" : "Closed") + '</span>';
+  } else if (isUrl) {
+    action = '<a class="btn btn-clay btn-sm" href="' + SF.esc(instr) + '" target="_blank" rel="noopener">Place a bid ' + '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>' + '</a>';
+  } else {
+    action = '' +
+      '<form class="bid-form" data-item-id="' + it.id + '" style="width:100%;display:flex;flex-direction:column;gap:.5rem">' +
+        '<input class="bid-name" type="text" placeholder="Your name" required aria-label="Your name" style="padding:.5rem .7rem;border-radius:8px;border:1px solid var(--line,#ddd);font-size:.85rem">' +
+        '<input class="bid-email" type="email" placeholder="you@example.com" required aria-label="Your email" style="padding:.5rem .7rem;border-radius:8px;border:1px solid var(--line,#ddd);font-size:.85rem">' +
+        '<input class="bid-amount" type="number" min="0" step="1" placeholder="Bid amount ($)" required aria-label="Bid amount in dollars" style="padding:.5rem .7rem;border-radius:8px;border:1px solid var(--line,#ddd);font-size:.85rem">' +
+        '<button class="btn btn-clay btn-sm bid-submit" type="submit" style="justify-content:center">Place bid</button>' +
+        '<p class="bid-status" role="status" style="font-size:.8rem;margin:0"></p>' +
+      '</form>';
+  }
+  var instrText = (instr && !isUrl) ? '<p class="muted" style="font-size:.85rem;margin-top:.4rem"><strong>Note:</strong> ' + SF.esc(instr) + '</p>' : '';
   return '' +
     '<article class="card reveal" data-d="' + (i % 3) + '">' +
       '<div class="card-media"><img src="' + SF.esc(img) + '" alt="' + SF.esc(it.title) + '" loading="lazy"></div>' +
@@ -193,7 +252,7 @@ function auctionCard(it, i) {
         '<h3>' + SF.esc(it.title) + '</h3>' +
         '<p class="muted" style="font-size:.95rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">' + SF.esc(it.description) + '</p>' +
         donor + ends +
-        '<div style="display:flex;align-items:baseline;gap:.6rem;margin-top:.6rem"><span class="price" style="font-size:1.3rem">' + SF.money(it.startingBidCents) + '</span><span class="muted" style="font-size:.8rem">starting bid</span></div>' +
+        bidPrice +
         est + instrText +
         '<div class="card-foot">' + action + '</div>' +
       '</div>' +

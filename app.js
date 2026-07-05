@@ -61,6 +61,7 @@
     getFeatured:     () => apiGet("/animals/featured"),
     getAnimal:       (id) => apiGet("/animals/" + id),
     getAuction:      (q = "") => apiGet("/fundraiser/items" + q),
+    placeBid:        (itemId, payload) => apiSend("POST", "/fundraiser/items/" + itemId + "/bids", payload),
     getResidents:    () => apiGet("/animals?status=resident"),
     sendContact:     (payload) => apiSend("POST", "/contact", payload),
     subscribe:       (email, source) => apiSend("POST", "/newsletter", { email, source }),
