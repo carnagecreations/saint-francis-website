@@ -26,6 +26,34 @@
     return data;
   }
 
+  /* ---------------- Turnstile bot protection ----------------
+     Every public form below renders a Cloudflare Turnstile widget and reads
+     its response token from the hidden input Turnstile injects into the
+     widget's container. The token is verified against our own deployed
+     Worker (never against Cloudflare's siteverify directly from the
+     browser) before the existing submit logic runs. */
+  const TURNSTILE_WORKER_URL = "https://turnstile-siteverify-sfr-rescue.shiann.workers.dev";
+
+  function getTurnstileToken(container) {
+    const input = container && container.querySelector('[name="cf-turnstile-response"]');
+    return input ? input.value : "";
+  }
+
+  async function verifyTurnstile(token) {
+    if (!token) return false;
+    try {
+      const r = await fetch(TURNSTILE_WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const data = await r.json().catch(() => ({}));
+      return !!data.success;
+    } catch (e) {
+      return false;
+    }
+  }
+
   const SF = {
     // public
     getStats:        () => apiGet("/stats"),
@@ -36,6 +64,8 @@
     getResidents:    () => apiGet("/animals?status=resident"),
     sendContact:     (payload) => apiSend("POST", "/contact", payload),
     subscribe:       (email, source) => apiSend("POST", "/newsletter", { email, source }),
+    verifyTurnstile: verifyTurnstile,
+    getTurnstileToken: getTurnstileToken,
     // NOTE: no admin client here by design. All admin operations (animals,
     // auction items, contact inbox) are performed through the SanctuaryBase
     // app, which proxies to this site's /api/admin/* routes server-side.
@@ -286,11 +316,19 @@
     document.querySelectorAll("[data-year]").forEach((e) => (e.textContent = new Date().getFullYear()));
   }
 
+  /* ---------------- "years of rescue" — founded 2012, never hardcode this ---------------- */
+  var FOUNDED_YEAR = 2012;
+  function initYearsActive() {
+    var years = new Date().getFullYear() - FOUNDED_YEAR;
+    document.querySelectorAll("[data-years-active]").forEach((e) => (e.textContent = years));
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initNav();
     initScrollbar();
     initReveal();
     initYear();
+    initYearsActive();
   });
 })();
 
@@ -754,17 +792,25 @@
         btn.disabled = true;
         btn.textContent = "Signing up...";
         var page = document.body.getAttribute("data-page") || location.pathname;
-        SF.subscribe(val, page)
-          .then(function () {
-            form.innerHTML = '<span style="color:var(--clay);font-weight:600;font-size:.95rem">✓ Thanks! You\'re on the list.</span>';
-            SF.announce("Thanks - you are subscribed. We will be in touch.");
-            SF.track("Newsletter Signup", { location: page });
-          })
-          .catch(function () {
+        SF.verifyTurnstile(SF.getTurnstileToken(form)).then(function (verified) {
+          if (!verified) {
             btn.disabled = false;
             btn.textContent = "Keep me posted";
-            fail("Something went wrong - please try again in a moment.");
-          });
+            fail("Please complete the verification and try again.");
+            return;
+          }
+          SF.subscribe(val, page)
+            .then(function () {
+              form.innerHTML = '<span style="color:var(--clay);font-weight:600;font-size:.95rem">✓ Thanks! You\'re on the list.</span>';
+              SF.announce("Thanks - you are subscribed. We will be in touch.");
+              SF.track("Newsletter Signup", { location: page });
+            })
+            .catch(function () {
+              btn.disabled = false;
+              btn.textContent = "Keep me posted";
+              fail("Something went wrong - please try again in a moment.");
+            });
+        });
       }
       btn.addEventListener("click", submit);
       input.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); submit(); } });

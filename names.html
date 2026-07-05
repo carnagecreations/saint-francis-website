@@ -265,6 +265,7 @@
         <div class="pfs-form" id="pfs-form">
           <input type="email" placeholder="your@email.com" aria-label="Email address" id="pfs-email" autocomplete="email">
           <button class="btn btn-clay btn-sm" type="button" id="pfs-submit">Keep me posted</button>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADvuR14WphHih6T3" data-action="turnstile-spin-v1" style="margin-top:.6rem"></div>
         </div>
         <p class="pfs-note">No spam. Unsubscribe anytime. We won't share your info.</p>
       </div>
@@ -475,6 +476,7 @@
 })();
 </script>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="app.js?v=37"></script>
 </body>
 </html>

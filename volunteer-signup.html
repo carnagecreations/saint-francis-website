@@ -208,6 +208,7 @@
         <div class="pfs-form" id="pfs-form">
           <input type="email" placeholder="your@email.com" aria-label="Email address" id="pfs-email" autocomplete="email">
           <button class="btn btn-clay btn-sm" type="button" id="pfs-submit">Keep me posted</button>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADvuR14WphHih6T3" data-action="turnstile-spin-v1" style="margin-top:.6rem"></div>
         </div>
         <p class="pfs-note">No spam. Unsubscribe anytime. We won&rsquo;t share your info.</p>
       </div>
@@ -324,6 +325,7 @@ document.addEventListener("DOMContentLoaded", function() {
     step: 1,
     minorSubmitted: false,
     submitting: false,
+    submitError: '',
     data: {
       firstName: '', lastName: '', email: '', phone: '', age: '',
       guardianName: '', guardianContact: '', waiverAgreed: false,
@@ -576,6 +578,7 @@ document.addEventListener("DOMContentLoaded", function() {
         '<label for="vs-notes" class="vsup-label">Anything else you’d like us to know? <span class="vsup-opt">(optional)</span></label>' +
         '<textarea id="vs-notes" class="vsup-ta" rows="3" placeholder="Questions, a favourite kind of animal, what drew you to Saint Francis…">' + h(d.notes) + '</textarea>' +
       '</div>' +
+      '<div id="vsup-turnstile" style="margin-top:6px"></div>' +
     '</fieldset>';
   }
 
@@ -622,7 +625,10 @@ document.addEventListener("DOMContentLoaded", function() {
     var isLast = step === 4;
     var backBtn = step > 1 ? '<button type="button" class="vsup-back" id="vsup-back">Back</button>' : '';
     var nextLabel = isLast ? (state.submitting ? 'Submitting…' : 'Submit application') : 'Continue';
-    return '<div class="vsup-nav">' +
+    var errNote = state.submitError ?
+      '<p role="alert" style="margin-top:14px;padding:12px 14px;border-radius:10px;background:#FBEAE5;color:#7C2D12;font-size:14.5px;line-height:1.5"><strong>We couldn’t send your application.</strong> ' + state.submitError + '</p>'
+    : '';
+    return errNote + '<div class="vsup-nav">' +
       backBtn +
       '<button type="button" class="vsup-next" id="vsup-next"' + (state.submitting ? ' disabled' : '') + '>' + nextLabel + ' <span aria-hidden="true">→</span></button>' +
     '</div>' +
@@ -652,6 +658,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.getElementById('vsup-form-body').innerHTML = body;
     bindEvents();
+    maybeRenderTurnstile();
+  }
+
+  var turnstileReady = false;
+  window.vsupTurnstileLoaded = function () { turnstileReady = true; maybeRenderTurnstile(); };
+  function maybeRenderTurnstile() {
+    if (state.step !== 4 || !turnstileReady || typeof turnstile === 'undefined') return;
+    var el = document.getElementById('vsup-turnstile');
+    if (!el || el.childElementCount) return;
+    turnstile.render(el, { sitekey: '0x4AAAAAADvuR14WphHih6T3', action: 'turnstile-spin-v1' });
   }
 
   function bindEvents() {
@@ -776,6 +792,7 @@ document.addEventListener("DOMContentLoaded", function() {
     state.step = 1;
     state.minorSubmitted = false;
     state.submitting = false;
+    state.submitError = '';
     state.errors = {};
     state.data = {
       firstName: '', lastName: '', email: '', phone: '', age: '',
@@ -821,7 +838,20 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   function submitForm() {
+    var tsEl = document.getElementById('vsup-turnstile');
+    SF.verifyTurnstile(SF.getTurnstileToken(tsEl)).then(function (verified) {
+      if (!verified) {
+        state.submitError = 'Please complete the verification challenge and try again.';
+        render();
+        return;
+      }
+      doSubmitForm();
+    });
+  }
+
+  function doSubmitForm() {
     state.submitting = true;
+    state.submitError = '';
     render();
 
     var d = state.data;
@@ -829,16 +859,36 @@ document.addEventListener("DOMContentLoaded", function() {
       name: d.firstName + (d.lastName ? ' ' + d.lastName : ''),
       email: d.email.trim(),
       subject: 'volunteer',
-      message: formatVolunteerMessage(d)
+      message: formatVolunteerMessage(d),
+      // Structured copy of every answer for the SanctuaryBase pipeline —
+      // the message above is only the human-readable summary.
+      details: {
+        formType: 'volunteer',
+        firstName: d.firstName, lastName: d.lastName,
+        phone: d.phone, age: d.age,
+        guardianName: d.guardianName, guardianContact: d.guardianContact,
+        waiverAgreed: d.waiverAgreed,
+        interests: d.interests, transport: d.transport,
+        availDays: d.availDays, availTimes: d.availTimes, frequency: d.frequency,
+        experienceLevel: d.experienceLevel, experienceDetail: d.experienceDetail,
+        heat: d.heat, accessibility: d.accessibility,
+        accessibilityNeeds: d.accessibilityNeeds, notes: d.notes
+      }
     };
 
     fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    }).catch(function() {}).finally(function() {
+    }).then(function(res) {
+      if (!res.ok) throw new Error('Request failed (' + res.status + ')');
+      // Only show the thank-you screen when the application actually saved —
+      // a swallowed failure here means a volunteer we silently lose.
       state.step = 5;
       state.minorSubmitted = d.age === 'minor';
+    }).catch(function() {
+      state.submitError = 'Please check your connection and try again, or email us at the address in the footer.';
+    }).finally(function() {
       state.submitting = false;
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -848,6 +898,7 @@ document.addEventListener("DOMContentLoaded", function() {
   render();
 })();
 </script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=vsupTurnstileLoaded&render=explicit" async defer></script>
 <script src="app.js?v=37"></script>
 </body>
 </html>

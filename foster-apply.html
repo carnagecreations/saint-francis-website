@@ -213,6 +213,7 @@
           </div>
         </div>
 
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADvuR14WphHih6T3" data-action="turnstile-spin-v1" style="margin-bottom:1rem"></div>
         <!-- Navigation buttons -->
         <div style="display:flex;gap:1rem;justify-content:space-between;align-items:center">
           <button class="btn btn-ghost" id="ff-prev" type="button" style="display:none">← Back</button>
@@ -274,6 +275,7 @@
         <div class="pfs-form" id="pfs-form">
           <input type="email" placeholder="your@email.com" aria-label="Email address" id="pfs-email" autocomplete="email">
           <button class="btn btn-clay btn-sm" type="button" id="pfs-submit">Keep me posted</button>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADvuR14WphHih6T3" data-action="turnstile-spin-v1" style="margin-top:.6rem"></div>
         </div>
         <p class="pfs-note">No spam. Unsubscribe anytime. We won&rsquo;t share your info.</p>
       </div>
@@ -348,6 +350,17 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+  // Arriving from an animal's "Apply to foster" link (animals.html) —
+  // prefill which animal they're interested in and jump straight to the form.
+  (function() {
+    var animalName = new URLSearchParams(location.search).get('animal');
+    if (!animalName) return;
+    var animals = document.getElementById('ff-animals');
+    if (animals) animals.value = animalName;
+    var appForm = document.querySelector('.form-card');
+    if (appForm) appForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  })();
+
   // Quick interest form logic
   var qiForm = document.getElementById('quick-interest-form');
 
@@ -474,7 +487,47 @@ document.addEventListener("DOMContentLoaded", function () {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Submitting&hellip;';
 
-    SF.sendContact(data)
+    SF.verifyTurnstile(SF.getTurnstileToken(form)).then(function (verified) {
+      if (!verified) {
+        btn.disabled = false;
+        btn.innerHTML = 'Submit application <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
+        showErr("Please complete the verification challenge and try again.");
+        return;
+      }
+      submitApplication(data);
+    });
+  });
+
+  function submitApplication(data) {
+    // Send every field twice: as a structured `details` payload for the
+    // SanctuaryBase pipeline, and as a readable summary in `message` so the
+    // Inbox shows the whole application even before it's processed.
+    var payload = {
+      name: data.name,
+      email: data.email,
+      subject: data.subject,
+      message: [
+        "Phone: " + data.phone,
+        "Address: " + data.address,
+        "Animals interested in fostering: " + data.animals,
+        "Living situation: " + data.living,
+        "Experience: " + data.experience,
+        "Time commitment: " + data.time,
+        "Additional notes: " + data.message
+      ].join("\n"),
+      details: {
+        formType: "foster",
+        phone: data.phone,
+        address: data.address,
+        animals: data.animals,
+        living: data.living,
+        experience: data.experience,
+        time: data.time,
+        notes: data.message
+      }
+    };
+
+    SF.sendContact(payload)
       .then(function (res) {
         form.reset();
         status.className = "form-status ok show";
@@ -488,7 +541,7 @@ document.addEventListener("DOMContentLoaded", function () {
         btn.disabled = false;
         btn.innerHTML = 'Submit application <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
       });
-  });
+  }
 
   function showErr(msg) {
     status.className = "form-status err show";
@@ -496,6 +549,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 </script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="app.js?v=37"></script>
 </body>
 </html>

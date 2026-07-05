@@ -224,7 +224,7 @@ details.faq-item[open] .faq-question { margin-bottom: .8rem; }
     <div class="giving-toggle" role="group" aria-label="Donation frequency">
       <span class="toggle-label active">One-time</span>
       <label class="switch">
-        <input type="checkbox" id="monthlyToggle" />
+        <input type="checkbox" id="monthlyToggle" aria-label="Give monthly instead of one-time" />
         <span class="slider"></span>
       </label>
       <span class="toggle-label">Monthly</span>
@@ -592,6 +592,7 @@ details.faq-item[open] .faq-question { margin-bottom: .8rem; }
         <div class="pfs-form" id="pfs-form">
           <input type="email" placeholder="your@email.com" aria-label="Email address" id="pfs-email" autocomplete="email">
           <button class="btn btn-clay btn-sm" type="button" id="pfs-submit">Keep me posted</button>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADvuR14WphHih6T3" data-action="turnstile-spin-v1" style="margin-top:.6rem"></div>
         </div>
         <p class="pfs-note">No spam. Unsubscribe anytime. We won&rsquo;t share your info.</p>
       </div>
@@ -657,6 +658,7 @@ details.faq-item[open] .faq-question { margin-bottom: .8rem; }
 </footer>
 
 <!-- FAQ uses native <details>/<summary>; footer year is set by app.js -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="app.js?v=37"></script>
 
 <!-- Exit-intent overlay -->
@@ -681,19 +683,40 @@ details.faq-item[open] .faq-question { margin-bottom: .8rem; }
   if (!overlay || sessionStorage.getItem('sf-exit-seen') || sessionStorage.getItem('sf-donate-intent')) return;
   var fired = false;
   var arrived = Date.now();
+  var lastFocus = null;
   function show() {
     if (fired || Date.now() - arrived < 5000) return;
     fired = true;
     sessionStorage.setItem('sf-exit-seen', '1');
+    lastFocus = document.activeElement;
     overlay.style.display = 'flex';
     setTimeout(function(){ closeBtn && closeBtn.focus(); }, 50);
   }
-  function hide() { overlay.style.display = 'none'; }
+  function hide() {
+    overlay.style.display = 'none';
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+    lastFocus = null;
+  }
   document.addEventListener('mouseleave', function(e){ if (e.clientY < 20) show(); });
   closeBtn.addEventListener('click', hide);
   overlay.addEventListener('click', function(e){ if (e.target === overlay) hide(); });
   cta.addEventListener('click', function(){ sessionStorage.setItem('sf-exit-seen', '1'); });
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && overlay.style.display === 'flex') hide(); });
+  // Keep Tab from escaping the dialog into the page behind it while open —
+  // matches the trap already used on the animal modal (app.js).
+  overlay.addEventListener('keydown', function(e){
+    if (e.key !== 'Tab' || overlay.style.display !== 'flex') return;
+    var focusable = Array.from(overlay.querySelectorAll(
+      'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    ));
+    if (!focusable.length) return;
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
 })();
 </script>
 

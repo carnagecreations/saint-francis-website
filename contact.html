@@ -115,6 +115,7 @@
           </select>
         </div>
         <div class="field"><label for="cf-message">Message <span class="req">*</span></label><textarea class="textarea" id="cf-message" name="message" required aria-required="true" placeholder="Tell us a little about what you&rsquo;re looking for&hellip;"></textarea></div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADvuR14WphHih6T3" data-action="turnstile-spin-v1" style="margin-bottom:1rem"></div>
         <button class="btn btn-clay" type="submit" id="cf-submit" style="width:100%;justify-content:center">Send message <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
         <p class="form-note mt-1" style="text-align:center">No commitment yet &mdash; just a conversation.</p>
       </form>
@@ -167,15 +168,22 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!name || !email || !subject || !message) { showErr("Please fill in all required fields."); return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showErr("Please enter a valid email address."); return; }
     btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Sending&hellip;';
-    SF.sendContact({ name: name, email: email, subject: subject, message: message })
-      .then(function (res) {
-        form.reset();
-        status.className = "form-status ok show";
-        status.textContent = (res && res.message) || "Thank you for reaching out! A volunteer will get back to you soon.";
-        status.scrollIntoView({ behavior: "smooth", block: "center" });
-      })
-      .catch(function (err) { showErr((err && err.message) || "Failed to send message. Please try again later."); })
-      .finally(function () { btn.disabled = false; btn.innerHTML = 'Send message <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>'; });
+    SF.verifyTurnstile(SF.getTurnstileToken(form)).then(function (verified) {
+      if (!verified) {
+        btn.disabled = false; btn.innerHTML = 'Send message <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>';
+        showErr("Please complete the verification challenge and try again.");
+        return;
+      }
+      SF.sendContact({ name: name, email: email, subject: subject, message: message })
+        .then(function (res) {
+          form.reset();
+          status.className = "form-status ok show";
+          status.textContent = (res && res.message) || "Thank you for reaching out! A volunteer will get back to you soon.";
+          status.scrollIntoView({ behavior: "smooth", block: "center" });
+        })
+        .catch(function (err) { showErr((err && err.message) || "Failed to send message. Please try again later."); })
+        .finally(function () { btn.disabled = false; btn.innerHTML = 'Send message <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>'; });
+    });
   });
   function showErr(msg) { status.className = "form-status err show"; status.textContent = msg; }
 });
@@ -192,6 +200,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="pfs-form" id="pfs-form">
           <input type="email" placeholder="your@email.com" aria-label="Email address" id="pfs-email" autocomplete="email">
           <button class="btn btn-clay btn-sm" type="button" id="pfs-submit">Keep me posted</button>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADvuR14WphHih6T3" data-action="turnstile-spin-v1" style="margin-top:.6rem"></div>
         </div>
         <p class="pfs-note">No spam. Unsubscribe anytime. We won&rsquo;t share your info.</p>
       </div>
@@ -263,6 +272,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <a class="back-top" href="#top" aria-label="Back to top">
   <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:22px;height:22px" aria-hidden="true"><ellipse cx="7.2" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="12" cy="7.6" rx="1.8" ry="2.5"/><ellipse cx="16.8" cy="9.5" rx="1.7" ry="2.3"/><ellipse cx="4.6" cy="14" rx="1.5" ry="2"/><ellipse cx="19.4" cy="14" rx="1.5" ry="2"/><path d="M12 12.4c-2.6 0-4.8 1.9-5.3 4.1-.3 1.4.8 2.6 2.2 2.6.9 0 1.7-.4 3.1-.4s2.2.4 3.1.4c1.4 0 2.5-1.2 2.2-2.6-.5-2.2-2.7-4.1-5.3-4.1Z"/></svg>
 </a>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="app.js?v=37"></script>
 </body>
 </html>
