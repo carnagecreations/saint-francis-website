@@ -100,41 +100,6 @@
   </div>
 </section>
 
-<!-- Quick Interest Section - now inline, not modal -->
-<section class="section tone-cream">
-  <div class="wrap" style="max-width:900px">
-    <div class="form-card reveal" style="background:var(--cream);border-left:4px solid var(--gold)">
-      <h2 style="font-size:1.4rem;margin-bottom:.5rem;color:var(--pine)">🐾 Quick questions before we dive in</h2>
-      <p style="color:var(--muted);margin-bottom:1.8rem">Just 3 quick answers to help us match you with the right animals to foster.</p>
-      <form id="quick-interest-form" style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:700px">
-        <div class="field" style="grid-column:1/-1">
-          <label for="qi-animals" style="font-weight:500;margin-bottom:.4rem;display:block">What types of animals interest you?</label>
-          <input type="text" id="qi-animals" placeholder="e.g., Dogs, Cats, Horses, Goats, or 'Open to any'" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
-        </div>
-        <div class="field">
-          <label for="qi-time" style="font-weight:500;margin-bottom:.4rem;display:block">How long can you foster?</label>
-          <select id="qi-time" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
-            <option value="">Select timeframe</option>
-            <option value="2-4weeks">2–4 weeks</option>
-            <option value="4-8weeks">4–8 weeks</option>
-            <option value="8plus">8+ weeks</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="qi-experience" style="font-weight:500;margin-bottom:.4rem;display:block">Animal care experience</label>
-          <select id="qi-experience" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
-            <option value="">Select level</option>
-            <option value="none">No experience, willing to learn</option>
-            <option value="some">Some experience</option>
-            <option value="experienced">Very experienced</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-gold" style="grid-column:1/-1;justify-self:start;width:auto;padding-left:2rem;padding-right:2rem">Next →</button>
-      </form>
-    </div>
-  </div>
-</section>
-
 <section class="section tone-bone2">
   <div class="wrap" style="display:grid;grid-template-columns:1.3fr .9fr;gap:2.5rem;align-items:start;max-width:1240px">
     <div class="form-card reveal">
@@ -364,27 +329,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var appForm = document.querySelector('.form-card');
     if (appForm) appForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
   })();
-
-  // Quick interest form logic
-  var qiForm = document.getElementById('quick-interest-form');
-
-  if (qiForm) {
-    qiForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      // Pre-fill the main form with quick interest answers
-      var animals = document.getElementById('ff-animals');
-      var time = document.getElementById('ff-time');
-      var exp = document.getElementById('ff-experience');
-
-      if (animals) animals.value = document.getElementById('qi-animals').value;
-      if (time) time.value = document.getElementById('qi-time').value;
-      if (exp) exp.value = document.getElementById('qi-experience').value;
-
-      // Scroll to the application form
-      var appForm = document.querySelector('.form-card');
-      if (appForm) appForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }
 
   // Load animals available for fostering
   var grid = document.getElementById("foster-animals-grid");

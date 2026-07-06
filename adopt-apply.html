@@ -100,42 +100,6 @@
   </div>
 </section>
 
-<!-- Quick Interest Section - now inline, not modal -->
-<section class="section tone-cream">
-  <div class="wrap" style="max-width:900px">
-    <div class="form-card reveal" style="background:var(--cream);border-left:4px solid var(--gold)">
-      <h2 style="font-size:1.4rem;margin-bottom:.5rem;color:var(--pine)">🔍 Let's find your match</h2>
-      <p style="color:var(--muted);margin-bottom:1.8rem">Answer 3 quick questions to help us suggest the best animals for you.</p>
-      <form id="quick-interest-form" style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:700px">
-        <div class="field" style="grid-column:1/-1">
-          <label for="qi-interest" style="font-weight:500;margin-bottom:.4rem;display:block">What type of animal interests you?</label>
-          <input type="text" id="qi-interest" placeholder="e.g., Dog, Cat, Horse, Goat, or 'Open to any'" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
-        </div>
-        <div class="field">
-          <label for="qi-setup" style="font-weight:500;margin-bottom:.4rem;display:block">Your living situation</label>
-          <select id="qi-setup" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
-            <option value="">Select your setup</option>
-            <option value="apartment">Apartment / condo</option>
-            <option value="house-yard">House with yard</option>
-            <option value="acreage">Acreage / farm</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="qi-experience" style="font-weight:500;margin-bottom:.4rem;display:block">Animal care experience</label>
-          <select id="qi-experience" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
-            <option value="">Select level</option>
-            <option value="none">No experience, ready to learn</option>
-            <option value="some">Some experience</option>
-            <option value="experienced">Very experienced</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-gold" style="grid-column:1/-1;justify-self:start;width:auto;padding-left:2rem;padding-right:2rem">Next →</button>
-      </form>
-    </div>
-  </div>
-</section>
-
 <section class="section tone-bone2">
   <div class="wrap" style="display:grid;grid-template-columns:1.3fr .9fr;gap:2.5rem;align-items:start;max-width:1240px">
     <div class="form-card reveal">
@@ -371,27 +335,6 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // Quick interest form logic
-  var qiForm = document.getElementById('quick-interest-form');
-
-  if (qiForm) {
-    qiForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      // Pre-fill the main form with quick interest answers
-      var interest = document.getElementById('af-interest');
-      var setup = document.getElementById('af-setup');
-      var exp = document.getElementById('af-experience');
-
-      if (interest) interest.value = document.getElementById('qi-interest').value;
-      if (setup) setup.value = document.getElementById('qi-setup').value;
-      if (exp) exp.value = document.getElementById('qi-experience').value;
-
-      // Scroll to the application form
-      var appForm = document.querySelector('.form-card');
-      if (appForm) appForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }
-
   // Arriving from an animal's "Apply to adopt" link (animals.html) — prefill
   // which animal they're interested in and jump straight to the form.
   (function() {
