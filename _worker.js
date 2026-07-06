@@ -15457,7 +15457,7 @@ function slugify(s) {
     .replace(/^-+|-+$/g, "") || "animal";
 }
 
-var SITE_ORIGIN = "https://sfr-rescue.pages.dev";
+var SITE_ORIGIN = "https://sfrescue.org";
 
 // Renders a real, crawlable, server-rendered page per animal — the site's
 // header/footer/CSS/app.js are reused verbatim so it matches every other
