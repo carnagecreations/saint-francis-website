@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
-
-Sitemap: https://sfr-rescue.pages.dev/sitemap.xml
+Disallow: /admin/
+Disallow: /*.json
+Sitemap: https://sfrescue.org/sitemap.xml
