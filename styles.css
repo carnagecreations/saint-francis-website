@@ -56,6 +56,7 @@
   --sage:       #7f9b84;
   --clay:       #b5623a;   /* desert terracotta accent */
   --clay-soft:  #c9764d;
+  --clay-text:  #a3542f;   /* clay, darkened for text/links on light backgrounds — --clay itself is 4.15:1 on cream/bone, just under WCAG AA's 4.5:1 for normal text; this is ~5.1:1 */
   --gold:       #c9a24b;   /* antique gold */
   --gold-soft:  #ddc07f;
   --bone:       #f4efe6;   /* paper background */
@@ -119,7 +120,7 @@ h3 { font-size: clamp(1.35rem, 2.4vw, 1.8rem); }
 .eyebrow {
   font-family: var(--body); font-weight: 700;
   font-size: .76rem; letter-spacing: .22em; text-transform: uppercase;
-  color: var(--clay); display: inline-flex; align-items: center; gap: .6rem;
+  color: var(--clay-text); display: inline-flex; align-items: center; gap: .6rem;
 }
 .eyebrow::before { content: ""; width: 26px; height: 1px; background: var(--gold); display: inline-block; }
 .lead { font-size: clamp(1.05rem, 1.6vw, 1.28rem); color: var(--moss); max-width: 60ch; }
@@ -134,7 +135,7 @@ p { color: var(--ink); }
 .legal-content h2:first-of-type { border-top: none; margin-top: 0; }
 .legal-content p, .legal-content li { font-size: .95rem; color: var(--ink); line-height: 1.7; margin-bottom: .75rem; }
 .legal-content ul { margin-left: 1.5rem; }
-.legal-content a { color: var(--clay); font-weight: 600; }
+.legal-content a { color: var(--clay-text); font-weight: 600; }
 
 /* ---------- layout ---------- */
 .wrap { width: min(100% - 2.6rem, var(--maxw)); margin-inline: auto; }
@@ -190,7 +191,7 @@ header.nav.scrolled { box-shadow: var(--shadow-sm); border-color: var(--line); b
 .brand img { width: 42px; height: 42px; border-radius: 50%; object-fit: contain; background: var(--bone); padding: 4px; box-shadow: var(--shadow-sm); }
 .brand-text { line-height: 1.05; }
 .brand-text strong { font-family: var(--display); font-weight: 600; font-size: 1.12rem; color: var(--pine); display: block; letter-spacing: -.01em; }
-.brand-text span { font-size: .64rem; letter-spacing: .22em; text-transform: uppercase; color: var(--clay); font-weight: 700; }
+.brand-text span { font-size: .64rem; letter-spacing: .22em; text-transform: uppercase; color: var(--clay-text); font-weight: 700; }
 .nav-links { display: flex; align-items: center; gap: .35rem; }
 .nav-links a {
   padding: .5rem .85rem; border-radius: 8px; font-weight: 550; font-size: .96rem;
@@ -396,14 +397,14 @@ header.nav.scrolled { box-shadow: var(--shadow-sm); border-color: var(--line); b
 .timeline::before { content: ""; position: absolute; left: 7px; top: .4rem; bottom: .4rem; width: 2px; background: linear-gradient(var(--gold), var(--line)); }
 .tl-item { position: relative; padding: 0 0 2.2rem 2.4rem; }
 .tl-item::before { content: ""; position: absolute; left: 0; top: .35rem; width: 16px; height: 16px; border-radius: 50%; background: var(--cream); border: 3px solid var(--gold); }
-.tl-item .yr { font-family: var(--display); font-weight: 600; color: var(--clay); font-size: 1.05rem; letter-spacing: .02em; }
+.tl-item .yr { font-family: var(--display); font-weight: 600; color: var(--clay-text); font-size: 1.05rem; letter-spacing: .02em; }
 .tl-item h3 { font-size: 1.25rem; margin: .15rem 0 .4rem; }
 .tl-item p { color: var(--muted); max-width: 56ch; }
 
 /* ---------- forms ---------- */
 .field { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.1rem; }
 .field label { font-size: .85rem; font-weight: 650; color: var(--pine); letter-spacing: .01em; }
-.field .req { color: var(--clay); }
+.field .req { color: var(--clay-text); }
 .input, .select, .textarea {
   background: var(--cream); border: 1.5px solid var(--line); border-radius: 10px;
   padding: .8rem .95rem; font-size: 1rem; transition: border-color .2s, box-shadow .2s; width: 100%;
@@ -520,7 +521,7 @@ footer.site a:hover { color: var(--gold-soft); }
 .prose p { color: var(--ink-soft); margin: 0 0 1rem; line-height: 1.75; }
 .prose ul { margin: 0 0 1.1rem 1.1rem; padding: 0; color: var(--ink-soft); line-height: 1.7; }
 .prose li { margin: 0 0 .4rem; }
-.prose a { color: var(--clay); text-decoration: underline; text-underline-offset: 2px; }
+.prose a { color: var(--clay-text); text-decoration: underline; text-underline-offset: 2px; }
 .prose a:hover { color: var(--pine); }
 .prose .updated { color: var(--muted); font-size: .9rem; margin-bottom: 1.6rem; }
 .facts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.4rem 0; }
@@ -659,7 +660,7 @@ footer.site a:hover { color: var(--gold-soft); }
 .sponsor-card-urgency { position: absolute; top: .7rem; left: .7rem; background: var(--clay); color: white; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 20px; }
 .sponsor-card-body { padding: 1.4rem; }
 .sponsor-card-name { font-family: var(--display); font-size: 1.3rem; font-weight: 600; color: var(--pine); margin-bottom: .3rem; }
-.sponsor-card-type { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: var(--clay); font-weight: 600; margin-bottom: .8rem; }
+.sponsor-card-type { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: var(--clay-text); font-weight: 600; margin-bottom: .8rem; }
 .sponsor-card-story { font-size: .9rem; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; }
 .sponsor-card-cost { font-size: .88rem; color: var(--pine); font-weight: 600; display: flex; align-items: center; gap: .4rem; margin-bottom: 1rem; }
 .sponsor-card-cost span { color: var(--muted); font-weight: 400; }
@@ -753,7 +754,7 @@ footer.site a:hover { color: var(--gold-soft); }
 .need-bar-track { height: 14px; background: #e8e0d0; border-radius: 7px; overflow: hidden; }
 .need-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--clay)); border-radius: 7px; transition: width 1.5s cubic-bezier(.22,1,.36,1); width: 0; }
 .need-bar-sub { font-size: .82rem; color: var(--muted); margin-top: .5rem; display: flex; justify-content: space-between; }
-.need-bar-cta { display: inline-block; margin-top: 1.2rem; font-size: .88rem; font-weight: 700; color: var(--clay); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.need-bar-cta { display: inline-block; margin-top: 1.2rem; font-size: .88rem; font-weight: 700; color: var(--clay-text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* 9. Inline micro-trust badges */
 .micro-trust { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
@@ -878,7 +879,7 @@ footer.site a:hover { color: var(--gold-soft); }
   font-size: .68rem; font-weight: 700; letter-spacing: .04em;
   background: rgba(201,162,75,.12); color: var(--gold); border: 1px solid rgba(201,162,75,.3);
 }
-.badge-tic.long { background: rgba(181,98,58,.12); color: var(--clay); border-color: rgba(181,98,58,.25); }
+.badge-tic.long { background: rgba(181,98,58,.12); color: var(--clay-text); border-color: rgba(181,98,58,.25); }
 
 /* --- Newsletter strip above footer --- */
 .pre-footer-strip {
@@ -978,7 +979,7 @@ footer.site a:hover { color: var(--gold-soft); }
 
 /* ── 2. Inline form validation feedback ────────────────────  */
 .field .field-error {
-  font-size: .8rem; color: var(--clay); font-weight: 600;
+  font-size: .8rem; color: var(--clay-text); font-weight: 600;
   margin-top: .25rem; display: none; align-items: center; gap: .3rem;
 }
 .field .field-error.show { display: flex; }
@@ -1278,7 +1279,7 @@ p, .lead { text-wrap: pretty; }
 /* 12 · Link underlines — animated gold sweep on text links in prose */
 .section p a:not(.btn), .split p a:not(.btn) { background-image: linear-gradient(var(--gold), var(--gold));
   background-size: 0% 1.5px; background-position: 0 100%; background-repeat: no-repeat;
-  transition: background-size .35s var(--ease); text-decoration: none; color: var(--clay); font-weight:600; }
+  transition: background-size .35s var(--ease); text-decoration: none; color: var(--clay-text); font-weight:600; }
 .section p a:not(.btn):hover, .split p a:not(.btn):hover { background-size: 100% 1.5px; }
 
 /* 13 · Announce bar — quiet gradient + smoother link */

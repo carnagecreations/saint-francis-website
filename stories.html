@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
       detail.innerHTML = storyDetail(s);
       SF.observe(detail);
     }).catch(function () {
-      detail.innerHTML = '<div class="empty"><p>We couldn&rsquo;t find that story. <a href="stories.html" style="color:var(--clay);text-decoration:underline">See all stories</a>.</p></div>';
+      detail.innerHTML = '<div class="empty"><p>We couldn&rsquo;t find that story. <a href="stories.html" style="color:var(--clay-text);text-decoration:underline">See all stories</a>.</p></div>';
     });
     return;
   }
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
   SF.getStories().then(function (items) {
     if (!items.length) {
       grid.innerHTML = '<div class="empty">' + '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V6a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v13"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H19"/></svg>' +
-        '<p>No stories posted yet &mdash; check back soon, or <a href="https://www.facebook.com/profile.php?id=61585411116127" target="_blank" rel="noopener" style="color:var(--clay);text-decoration:underline">follow us on Facebook</a> for updates in the meantime.</p></div>';
+        '<p>No stories posted yet &mdash; check back soon, or <a href="https://www.facebook.com/profile.php?id=61585411116127" target="_blank" rel="noopener" style="color:var(--clay-text);text-decoration:underline">follow us on Facebook</a> for updates in the meantime.</p></div>';
       return;
     }
     grid.innerHTML = items.map(function (s, i) { return storyCard(s, i); }).join("");
@@ -151,7 +151,7 @@ function storyDetail(s) {
   var date = s.publishedAt ? new Date(s.publishedAt).toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric"}) : "";
   var paragraphs = (s.body || "").split(/\n\s*\n/).map(function (p) { return '<p style="margin-top:1rem;line-height:1.7">' + SF.esc(p).replace(/\n/g, "<br>") + '</p>'; }).join("");
   return '' +
-    '<a href="stories.html" style="color:var(--clay);font-size:.9rem;text-decoration:underline">&larr; All stories</a>' +
+    '<a href="stories.html" style="color:var(--clay-text);font-size:.9rem;text-decoration:underline">&larr; All stories</a>' +
     '<div class="card-media reveal" style="margin-top:1rem;border-radius:16px;overflow:hidden"><img src="' + SF.esc(img) + '" alt="' + SF.esc(s.title) + '" style="width:100%;aspect-ratio:16/9;object-fit:cover"></div>' +
     '<div class="meta-row reveal" style="margin-top:1rem"><span>' + SF.esc(date) + '</span></div>' +
     '<h1 class="reveal" style="margin-top:.4rem">' + SF.esc(s.title) + '</h1>' +

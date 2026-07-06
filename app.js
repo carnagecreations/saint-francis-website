@@ -804,7 +804,7 @@
           }
           SF.subscribe(val, page)
             .then(function () {
-              form.innerHTML = '<span style="color:var(--clay);font-weight:600;font-size:.95rem">✓ Thanks! You\'re on the list.</span>';
+              form.innerHTML = '<span style="color:var(--clay-text);font-weight:600;font-size:.95rem">✓ Thanks! You\'re on the list.</span>';
               SF.announce("Thanks - you are subscribed. We will be in touch.");
               SF.track("Newsletter Signup", { location: page });
             })
@@ -872,7 +872,7 @@
           }
           form.innerHTML = "";
           var ok = document.createElement("span");
-          ok.style.cssText = "color:var(--clay);font-weight:600;font-size:.95rem";
+          ok.style.cssText = "color:var(--clay-text);font-weight:600;font-size:.95rem";
           ok.appendChild(document.createTextNode('"' + val + '" added - '));
           var link = document.createElement("a");
           link.href = "names.html";
