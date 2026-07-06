@@ -211,12 +211,21 @@ details.faq-item[open] .faq-question { margin-bottom: .8rem; }
       <label for="donationRange" class="sr-only">Choose your donation amount</label>
       <div class="slider-row">
         <span>$10</span>
-        <input id="donationRange" type="range" min="10" max="500" step="10" value="50" />
+        <input
+          id="donationRange"
+          type="range"
+          min="10"
+          max="500"
+          step="10"
+          value="50"
+          aria-label="Choose donation amount from $10 to $500"
+          aria-valuetext="$50"
+        />
         <span>$500</span>
       </div>
     </div>
 
-    <div class="impact-box" aria-live="polite">
+    <div class="impact-box" aria-live="polite" aria-atomic="true">
       <div class="amount" id="donationAmount">$50</div>
       <p id="donationImpact">Covers a week of hay and grain for a rescue goat.</p>
     </div>
@@ -423,6 +432,7 @@ details.faq-item[open] .faq-question { margin-bottom: .8rem; }
     function updateDonation() {
       const value = Number(slider.value);
       amount.textContent = '$' + value;
+      slider.setAttribute('aria-valuetext', '$' + value);
       impact.textContent = getImpact(value);
       donateBtn.textContent = 'Donate $' + value + ' now →';
       if (monthlyToggle.checked) {
@@ -605,7 +615,7 @@ details.faq-item[open] .faq-question { margin-bottom: .8rem; }
     <div class="foot-grid">
       <div>
         <div class="foot-brand">
-          <img loading="lazy" src="images/logo.webp" alt="" width="44" height="44" style="object-fit:contain">
+          <img loading="lazy" src="images/logo.webp" alt="" aria-hidden="true" width="44" height="44" style="object-fit:contain">
           <strong>Saint Francis</strong>
         </div>
         <p style="max-width:34ch;color:rgba(251,248,241,.72);font-size:.95rem">A volunteer-run farm animal rescue &amp; sanctuary in Yuma, Arizona. No office. No paid staff. Just people who show up for the animals.</p>

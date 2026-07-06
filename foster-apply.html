@@ -106,11 +106,11 @@
       <p style="color:var(--muted);margin-bottom:1.8rem">Just 3 quick answers to help us match you with the right animals to foster.</p>
       <form id="quick-interest-form" style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:700px">
         <div class="field" style="grid-column:1/-1">
-          <label style="font-weight:500;margin-bottom:.4rem;display:block">What types of animals interest you?</label>
+          <label for="qi-animals" style="font-weight:500;margin-bottom:.4rem;display:block">What types of animals interest you?</label>
           <input type="text" id="qi-animals" placeholder="e.g., Dogs, Cats, Horses, Goats, or 'Open to any'" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
         </div>
         <div class="field">
-          <label style="font-weight:500;margin-bottom:.4rem;display:block">How long can you foster?</label>
+          <label for="qi-time" style="font-weight:500;margin-bottom:.4rem;display:block">How long can you foster?</label>
           <select id="qi-time" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
             <option value="">Select timeframe</option>
             <option value="2-4weeks">2–4 weeks</option>
@@ -119,7 +119,7 @@
           </select>
         </div>
         <div class="field">
-          <label style="font-weight:500;margin-bottom:.4rem;display:block">Animal care experience</label>
+          <label for="qi-experience" style="font-weight:500;margin-bottom:.4rem;display:block">Animal care experience</label>
           <select id="qi-experience" style="padding:.8rem;border:1px solid var(--line);border-radius:6px;font-size:1rem;width:100%">
             <option value="">Select level</option>
             <option value="none">No experience, willing to learn</option>
@@ -150,7 +150,7 @@
         </div>
       </div>
 
-      <div class="form-status" id="foster-status" role="status"></div>
+      <div class="form-status" id="foster-status" role="alert" aria-live="polite" aria-atomic="true"></div>
       <form id="foster-form" novalidate>
         <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="ff-company">Company (leave blank)</label><input id="ff-company" name="company" type="text" tabindex="-1" autocomplete="off"></div>
 
@@ -288,7 +288,7 @@
     <div class="foot-grid">
       <div>
         <div class="foot-brand">
-          <img loading="lazy" src="images/logo.webp" alt="" width="44" height="44" style="object-fit:contain">
+          <img loading="lazy" src="images/logo.webp" alt="" aria-hidden="true" width="44" height="44" style="object-fit:contain">
           <strong>Saint Francis</strong>
         </div>
         <p style="max-width:34ch;color:rgba(251,248,241,.72);font-size:.95rem">A volunteer-run farm animal rescue &amp; sanctuary in Yuma, Arizona. No office. No paid staff. Just people who show up for the animals.</p>

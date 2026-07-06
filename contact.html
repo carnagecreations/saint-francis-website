@@ -94,7 +94,7 @@
       </div>
       <h2 style="font-size:1.8rem;margin-bottom:.3rem">Send us a message</h2>
       <p class="muted" style="margin-bottom:1.6rem">Every message comes to a volunteer. We read them all and respond within 48 hours &mdash; usually sooner.</p>
-      <div class="form-status" id="contact-status" role="status"></div>
+      <div class="form-status" id="contact-status" role="alert" aria-live="polite" aria-atomic="true"></div>
       <form id="contact-form" novalidate>
         <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label for="cf-company">Company (leave blank)</label><input id="cf-company" name="company" type="text" tabindex="-1" autocomplete="off"></div>
         <div class="form-row">
@@ -213,7 +213,7 @@ document.addEventListener("DOMContentLoaded", function () {
     <div class="foot-grid">
       <div>
         <div class="foot-brand">
-          <img loading="lazy" src="images/logo.webp" alt="" width="44" height="44" style="object-fit:contain">
+          <img loading="lazy" src="images/logo.webp" alt="" aria-hidden="true" width="44" height="44" style="object-fit:contain">
           <strong>Saint Francis</strong>
         </div>
         <p style="max-width:34ch;color:rgba(251,248,241,.72);font-size:.95rem">A volunteer-run farm animal rescue &amp; sanctuary in Yuma, Arizona. No office. No paid staff. Just people who show up for the animals.</p>
